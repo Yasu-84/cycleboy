@@ -1,0 +1,52 @@
+name: Scrape Race Data
+
+on:
+  schedule:
+    # JST AM05:15 = UTC 20:15 (前日)
+    - cron: '15 20 * * *'
+  workflow_dispatch:
+    inputs:
+      step:
+        description: '実行ステップ (all / schedule / program / entry)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - schedule
+          - program
+          - entry
+      target_date:
+        description: '対象日付 (YYYY-MM-DD, 省略時は JST 当日)'
+        required: false
+        type: string
+
+# 同名グループの二重実行を防止（実行中のジョブはキャンセルせず、新規起動をスキップ）
+concurrency:
+  group: scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run scraper
+        run: npx tsx scripts/scrape.ts "${{ inputs.step || 'all' }}" "${{ inputs.target_date || '' }}"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SCRAPE_DELAY_MS: ${{ secrets.SCRAPE_DELAY_MS || '500' }}

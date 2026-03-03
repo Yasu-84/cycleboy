@@ -1,0 +1,169 @@
+/**
+ * 出走表（直近成績）スクレイパー
+ *
+ * URL: /race/entry/results.html?race_id={race_id}
+ * 選手行: tr.PlayerList
+ *
+ * パース仕様（設計書 §5.4）:
+ * - 今節: .detail_table_tbodyItem.GroupLeft 以降のセル
+ * - 直近1〜3: th.detail_table_tbodyInner.GroupLeft をマーカーとして開催情報と成績を取得
+ * - レース名: .RaceName
+ * - 順位: .result_no（数値変換）
+ * - 今節データなし（開催初日等）: current_session = null
+ */
+import { toIntSafe } from '@/lib/utils/dateUtils';
+import { fetchPage, scrapeDelay, type CheerioAPI } from './fetchUtils';
+import type { RaceRecentResultInput, CurrentSession, RecentSession } from '@/types/raceRecentResult';
+
+// cheerio の .each コールバックで受け取る Element の型
+type CheerioElement = Parameters<Parameters<ReturnType<CheerioAPI>['each']>[0]>[1];
+
+/**
+ * 出走表（直近成績）を取得する
+ */
+export async function scrapeRecentResults(raceId: string): Promise<RaceRecentResultInput[]> {
+    const path = `/race/entry/results.html?race_id=${raceId}`;
+    const $ = await fetchPage(path);
+    await scrapeDelay();
+
+    const results: RaceRecentResultInput[] = [];
+
+    $('tr.PlayerList').each((_, row) => {
+        try {
+            // 選手基本情報（出走表ページと同じ構造）
+            const tds = $(row).find('td');
+            const waku_no = toIntSafe(tds.eq(0).text().trim());
+            const sha_no = toIntSafe(tds.eq(1).text().trim());
+            if (sha_no === 0) return;
+
+            const playerInfoTd = tds.eq(4);
+            const player_name = playerInfoTd.find('.PlayerName').text().trim();
+            const fromText = playerInfoTd.find('.PlayerFrom').text().trim();
+            const fromMatch = fromText.match(/^([^/／\d]+)[/／]\s*(\d+)/);
+            const prefecture = fromMatch ? fromMatch[1].trim() : fromText.replace(/\d.*/, '').trim();
+            const age = fromMatch ? toIntSafe(fromMatch[2]) : 0;
+            const classText = playerInfoTd.find('.PlayerClass').text().trim();
+            const classMatch = classText.match(/(\d+期)[^S]*(S\d|A\d)/);
+            const kinen = classMatch ? classMatch[1] : classText.slice(0, 4);
+            const class_rank = classMatch ? classMatch[2] : '';
+
+            // 成績テーブルを持つコンテナを取得（行の次の要素、またはネストされた detail テーブル）
+            // 実際の HTML 構造に応じて調整が必要な場合あり
+            const detailContainer = $(row).next('tr').add($(row).find('.detail_table'));
+
+            const { current_session, recent1, recent2, recent3 } =
+                parseRecentSessions($, detailContainer, row);
+
+            results.push({
+                netkeiba_race_id: raceId,
+                waku_no,
+                sha_no,
+                player_name,
+                prefecture,
+                age,
+                kinen,
+                class_rank,
+                current_session,
+                recent1,
+                recent2,
+                recent3,
+            });
+        } catch {
+            // 該当選手行をスキップ
+        }
+    });
+
+    return results;
+}
+
+// ----------------------------------------------------------------
+// 直近成績セッションパース
+// ----------------------------------------------------------------
+
+interface SessionParseResult {
+    current_session: CurrentSession | null;
+    recent1: RecentSession | null;
+    recent2: RecentSession | null;
+    recent3: RecentSession | null;
+}
+
+/**
+ * 選手行に紐づく成績コンテナから今節・直近1〜3を抽出する
+ */
+function parseRecentSessions(
+    $: CheerioAPI,
+    container: ReturnType<CheerioAPI>,
+    playerRow: CheerioElement
+): SessionParseResult {
+    // 今節: .detail_table_tbodyItem.GroupLeft を起点に同行内のセルから取得
+    let current_session: CurrentSession | null = null;
+    const currentRaces: Array<{ race_name: string; rank: number }> = [];
+
+    $(playerRow).find('.detail_table_tbodyItem.GroupLeft ~ td, .detail_table_tbodyItem.GroupLeft').each((_, cell) => {
+        const raceName = $(cell).find('.RaceName').text().trim();
+        const rankText = $(cell).find('.result_no').text().trim();
+        if (raceName) {
+            const rank = toIntSafe(rankText);
+            currentRaces.push({ race_name: raceName, rank });
+        }
+    });
+
+    if (currentRaces.length > 0) {
+        current_session = { races: currentRaces };
+    }
+
+    // 直近1〜3: th.detail_table_tbodyInner.GroupLeft をマーカーとして取得
+    const recentSessions: RecentSession[] = [];
+
+    // コンテナ内の各直近開催ブロックを探索
+    container.find('th.detail_table_tbodyInner.GroupLeft, .RecentBlock').each((_, block) => {
+        try {
+            // 開催情報ヘッダーから日付・グレード・競輪場を取得
+            const headerText = $(block).text().trim();
+            const headerMatch = headerText.match(/(\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
+            const kaisai_date = headerMatch
+                ? headerMatch[1].replace(/\//g, '-')
+                : '';
+
+            const grade = $(block).find('[class*="Icon_GradeType"]').first().text().trim() || 'F1';
+            const jyo_name = extractJyoNameFromBlock($, block);
+
+            const races: Array<{ race_name: string; rank: number }> = [];
+
+            // ブロック以降の成績セルを取得
+            let sibling = $(block).next();
+            while (sibling.length && !sibling.is('th.detail_table_tbodyInner.GroupLeft')) {
+                const raceName = sibling.find('.RaceName').text().trim();
+                const rankText = sibling.find('.result_no').text().trim();
+                if (raceName) {
+                    races.push({ race_name: raceName, rank: toIntSafe(rankText) });
+                }
+                sibling = sibling.next();
+            }
+
+            if (kaisai_date && races.length > 0) {
+                recentSessions.push({ kaisai_date, grade, jyo_name, races });
+            }
+        } catch {
+            // スキップ
+        }
+    });
+
+    return {
+        current_session,
+        recent1: recentSessions[0] ?? null,
+        recent2: recentSessions[1] ?? null,
+        recent3: recentSessions[2] ?? null,
+    };
+}
+
+function extractJyoNameFromBlock(
+    $: CheerioAPI,
+    block: CheerioElement
+): string {
+    // ブロック内の競輪場名テキストを抽出（実装はHTML構造に依存）
+    const text = $(block).text().trim();
+    // "久留米" などの競輪場名を抽出（グレード・日付以外のテキスト）
+    const cleaned = text.replace(/\d{4}[-/]\d{1,2}[-/]\d{1,2}/, '').replace(/(GP|G\d|F\d)/g, '').trim();
+    return cleaned.slice(0, 10); // 最大10文字
+}

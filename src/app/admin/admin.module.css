@@ -1,0 +1,302 @@
+/* ======================================================
+   管理画面 スタイルシート
+   ====================================================== */
+
+/* --- レイアウト --- */
+.adminWrap {
+  min-height: 100vh;
+  background: #0f1117;
+  color: #e8eaf0;
+  font-family: 'Inter', 'Hiragino Sans', 'Meiryo', sans-serif;
+  padding: 0;
+}
+
+.adminContainer {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* --- ヘッダー --- */
+.adminHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #2a2d3a;
+}
+
+.adminHeaderIcon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #f5c542, #e8953a);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.adminHeaderTitle {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #f5c542;
+  margin: 0;
+}
+
+.adminHeaderSub {
+  font-size: 0.75rem;
+  color: #888;
+  margin: 0.15rem 0 0;
+}
+
+/* --- 警告バナー --- */
+.alertBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(234, 67, 53, 0.12);
+  border: 1px solid rgba(234, 67, 53, 0.4);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.85rem;
+  color: #ff7b72;
+}
+
+/* --- セクション --- */
+.section {
+  background: #1a1d27;
+  border: 1px solid #2a2d3a;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #888;
+  margin: 0 0 1.25rem;
+}
+
+/* --- 日付ピッカー --- */
+.dateRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.dateLabel {
+  font-size: 0.85rem;
+  color: #aaa;
+  white-space: nowrap;
+}
+
+.dateInput {
+  background: #0f1117;
+  border: 1px solid #3a3d4a;
+  border-radius: 8px;
+  color: #e8eaf0;
+  font-size: 0.95rem;
+  padding: 0.5rem 0.75rem;
+  outline: none;
+  transition: border-color 0.15s;
+  color-scheme: dark;
+}
+
+.dateInput:focus {
+  border-color: #f5c542;
+}
+
+/* --- ボタングリッド --- */
+.btnGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.btnGrid .btnFull {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+  .btnGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- ボタン共通 --- */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  letter-spacing: 0.01em;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* プライマリ（ゴールド） */
+.btnPrimary {
+  background: linear-gradient(135deg, #f5c542, #e8953a);
+  color: #0f1117;
+}
+.btnPrimary:not(:disabled):hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* セカンダリ（グレー） */
+.btnSecondary {
+  background: #2a2d3a;
+  color: #c0c4d3;
+  border: 1px solid #3a3d4a;
+}
+.btnSecondary:not(:disabled):hover {
+  background: #32364a;
+  color: #e8eaf0;
+}
+
+/* デンジャー（削除） */
+.btnDanger {
+  background: rgba(234, 67, 53, 0.15);
+  color: #ff7b72;
+  border: 1px solid rgba(234, 67, 53, 0.35);
+}
+.btnDanger:not(:disabled):hover {
+  background: rgba(234, 67, 53, 0.25);
+}
+
+/* ---- メッセージ ---- */
+.statusMsg {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.statusMsgOk {
+  background: rgba(52, 199, 89, 0.12);
+  border: 1px solid rgba(52, 199, 89, 0.3);
+  color: #34c759;
+}
+
+.statusMsgErr {
+  background: rgba(234, 67, 53, 0.12);
+  border: 1px solid rgba(234, 67, 53, 0.3);
+  color: #ff7b72;
+}
+
+/* --- ジョブ一覧テーブル --- */
+.jobTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.jobTable th {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  color: #777;
+  font-weight: 500;
+  border-bottom: 1px solid #2a2d3a;
+  white-space: nowrap;
+}
+
+.jobTable td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid #1e2130;
+  vertical-align: middle;
+}
+
+.jobTable tr:last-child td {
+  border-bottom: none;
+}
+
+/* ステータスバッジ */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badgeRunning {
+  background: rgba(99, 149, 255, 0.18);
+  color: #6395ff;
+  animation: pulse 1.5s infinite;
+}
+
+.badgeSuccess {
+  background: rgba(52, 199, 89, 0.15);
+  color: #34c759;
+}
+
+.badgeFailed {
+  background: rgba(234, 67, 53, 0.15);
+  color: #ff7b72;
+}
+
+.badgeSkipped {
+  background: rgba(160, 160, 160, 0.15);
+  color: #999;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+/* --- ポーリングインジケーター --- */
+.pollRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.pollIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.pollDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34c759;
+  animation: pulse 2s infinite;
+}
+
+/* --- 空状態 --- */
+.emptyState {
+  text-align: center;
+  padding: 2rem 0;
+  color: #555;
+  font-size: 0.85rem;
+}
