@@ -142,7 +142,8 @@ function parseRecentSessions(
             const headerMatch = headerText.match(/^(\d{1,2}\/\d{1,2})/);
             const kaisai_date = headerMatch ? headerMatch[1].replace(/\//g, '/') : '';
 
-            const grade = $(block).find('[class*="Icon_GradeType"]').first().text().trim() || 'F1';
+            const rawGrade = $(block).find('[class*="Icon_GradeType"]').first().text().trim() || 'F1';
+            const grade = normalizeGrade(rawGrade);
             const jyo_name = extractJyoNameFromBlock($, block);
 
             const races: Array<{ race_name: string; rank: number | string }> = [];
@@ -187,4 +188,17 @@ function extractJyoNameFromBlock(
     const text = $(block).text().trim();
     const cleaned = text.replace(/\d{1,2}\/\d{1,2}/, '').replace(/(GP|GI{1,3}|G\d|F\d)/g, '').trim();
     return cleaned.slice(0, 10);
+}
+
+/** HTML のグレード表記をシステム統一表記に変換 */
+function normalizeGrade(raw: string): string {
+    const map: Record<string, string> = {
+        'GP': 'GP',
+        'GIII': 'G3',
+        'GII': 'G2',
+        'GI': 'G1',
+        'FII': 'F2',
+        'FI': 'F1',
+    };
+    return map[raw] ?? raw;
 }
