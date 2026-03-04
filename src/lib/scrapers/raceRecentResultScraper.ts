@@ -181,9 +181,11 @@ function extractJyoNameFromBlock(
     $: CheerioAPI,
     block: CheerioElement
 ): string {
-    // ブロック内の競輪場名テキストを抽出（実装はHTML構造に依存）
+    // .JyoName スパンから競輪場名を直接取得
+    const jyoName = $(block).find('.JyoName').text().trim();
+    if (jyoName) return jyoName;
+    // フォールバック: テキスト全体から日付・グレードを除去して抽出
     const text = $(block).text().trim();
-    // "久留米" などの競輪場名を抽出（グレード・日付以外のテキスト）
-    const cleaned = text.replace(/\d{4}[-/]\d{1,2}[-/]\d{1,2}/, '').replace(/(GP|G\d|F\d)/g, '').trim();
-    return cleaned.slice(0, 10); // 最大10文字
+    const cleaned = text.replace(/\d{1,2}\/\d{1,2}/, '').replace(/(GP|GI{1,3}|G\d|F\d)/g, '').trim();
+    return cleaned.slice(0, 10);
 }
