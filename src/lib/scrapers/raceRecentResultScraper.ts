@@ -52,9 +52,8 @@ export async function scrapeRecentResults(raceId: string): Promise<RaceRecentRes
             const kinen = classMatch ? classMatch[1] : (halfClassText.match(/(\d+)期/)?.[1] ?? '');
             const class_rank = classMatch ? classMatch[2].toUpperCase() : '';
 
-            // 成績テーブルを持つコンテナを取得（行の次の要素、またはネストされた detail テーブル）
-            // 実際の HTML 構造に応じて調整が必要な場合あり
-            const detailContainer = $(row).next('tr').add($(row).find('.detail_table'));
+            // 今節・直近の成績セルは PlayerList 行内に直接含まれている
+            const detailContainer = $(row);
 
             const { current_session, recent1, recent2, recent3 } =
                 parseRecentSessions($, detailContainer, row);
