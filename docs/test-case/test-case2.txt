@@ -1,0 +1,121 @@
+2026年3月3日に管理者画面の「レースプログラム」を実行した時の動きを下記に記します。
+想定通りにデータが登録されるチェックして。
+
+①レース日程テーブルから、race_schedules[start_date] ≦ 当日日付 ≦ race_schedules[end_date] の条件に該当する競輪場コードを取得
+  - 該当するレコードがない場合は、処理終了（例：当日=2026/03/04 の場合）
+  - 該当するレコードがある場合、取得した競輪場コードを用いてデータの抽出を行う（例：当日=2026/03/03 の場合）
+
+②以下のサイトにアクセス
+注意）参照先のサイトを変更します
+
+https://keirin.netkeiba.com/db/race_program/?kaisai_group_id={YYYYMMDDJJ}
+
+YYYYMMDD: race_schedules[start_date]  注意）当日日付を使用しない
+JJ: 競輪場コード
+
+競輪場コード:44(大垣)の場合、{YYYYMMDDJJ}：2026022844
+
+https://keirin.netkeiba.com/db/race_program/?kaisai_group_id=2026022844
+
+③以下のデータを抽出
+
+<div class="Tab_RaceDaySelect p00">
+<ul class="Tab4">
+<li>
+<a href="javascript:void(0);" class="" data-kaisai_date=2026228>2/28
+<span class="Weekday">(土)</span>
+<em class="schedule">初日</em>
+</a>
+</li><li>
+<a href="javascript:void(0);" class="" data-kaisai_date=202631>3/1
+<span class="Weekday">(日)</span>
+<em class="schedule">2日目</em>
+</a>
+</li><li>
+<a href="javascript:void(0);" class="" data-kaisai_date=202632>3/2
+<span class="Weekday">(月)</span>
+<em class="schedule">3日目</em>
+</a>
+</li><li>
+<a href="javascript:void(0);" class="Tab_Active" data-kaisai_date=202633>3/3
+<span class="Weekday">(火)</span>
+<em class="schedule">最終日</em>
+</a>
+</li>
+</ul>
+
+③抽出したデータから、以下のようにprograms（開催）にデータを登録
+例）2026/03/03 の場合
+
+| 項目名             | データ設定例            |
+| ------------------ |-------------------------|
+|  kaisai_date       |   2026-03-03            |
+|  program_type      |   最終日                |
+
+
+④以下のデータを抽出（対象日のレース分抽出）
+例）2026/03/03 12Rの場合
+
+<div class="RaceList_Main_Box">
+<a href="https://keirin.netkeiba.com/db/result/?race_id=202603034412" class="">
+<div class="RaceList_Item01">
+<div class="Race_Num" id="racing_num_202603034412" data-race_state="2">
+<span>12R</span>
+</div>
+</div>
+<div class="RaceList_Item02">
+<dl>
+<dt class="Race_Name">Ｓ級 決勝</dt>
+<dd class="Race_Data"><span>発走 16:20</span> <span>締切 16:15</span> <span>9車</span></dd>
+
+⑤抽出したデータから、以下のようにraces（レースプログラム）にデータを登録（対象日のレース分登録）
+例）2026/03/03 12Rの場合
+
+| 項目名             | データ設定例            |
+| ------------------ |-------------------------|
+|   race_no          |   12                    |
+|   race_title       |   Ｓ級 決勝             |
+|   car_count        |   9                     |
+|   departure_time   |   16:20                 |
+|   deadline_time    |   16:15                 |
+
+
+⑥以下のサイトにアクセス
+例）2026/03/03 44(大垣) の場合
+
+https://keirin.netkeiba.com/race/course/calendar.html?kaisai_year=206&kaisai_month=03&jyo_cd=44&kaisai_type=1
+
+⑦以下のデータを抽出
+例）2026/03/03 44(大垣) の場合
+
+</li><li class="Calendar_DayList">
+<dl class="ThisWeek_RaceList fc">
+<dt class="ThisWeek_Day">
+<p>3/3<span class="Tue">（火）</span></p>
+</dt>
+<dd class="ThisWeek_Btn">
+<ul class="Btn_3col fc">
+<li class="race_grade_04">
+<a href="/race/race_list/?kaisai_date=20260303&jyocd=44" title="">
+<p class="JyoName">大垣</p>
+<div class="Content_Icon">
+<span class="Icon_GradeType Icon_GradeType4">GIII</span>
+
+
+
+
+</div>
+<span class="Top_RaceName">最終日</span>
+</a>
+
+⑧抽出したデータから、以下のようにprograms（開催）にデータを登録
+例）2026/03/03 44(大垣) の場合
+
+| 項目名                             | データ設定例            |
+| ---------------------------------- |-------------------------|
+|   kaisai_date                      |   2026-02-28            |
+|   grade                            |   G3（※2）             |
+|   kaisai_type                      |   NULL(※1)             |
+
+※1: 2026/03/03は通常開催(昼間開催)のため、開催区分に該当するデータがないため未設定
+※2: グレードは、レース日程で取得した値を設定
