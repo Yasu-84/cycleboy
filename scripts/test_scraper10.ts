@@ -15,10 +15,10 @@ async function testFetch() {
         const jyo_cd = m ? m[1] : null;
         if (!jyo_cd) return;
 
-        // 場名は 開催地名
-        const jyo_name = $(el).contents().filter(function () {
-            return (this as any).type === 'text';
-        }).text().trim() || $(el).text().trim().replace(/\n.*$/g, '');
+        // 場名は 開催地名（テキストノードのみ抽出）
+        const contentNodes = $(el).contents().toArray();
+        const textNode = contentNodes.find((n) => (n as any).type === 'text');
+        const jyo_name = textNode ? $(textNode).text().trim() : $(el).text().trim().replace(/\n.*$/g, '');
 
         const parent = $(el).closest('li, div');
         const gradeIconClass = parent.find('.Icon_GradeType').attr('class') ?? '';
