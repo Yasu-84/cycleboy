@@ -17,7 +17,7 @@ import * as raceEntryRepo from '@/lib/repositories/raceEntryRepository';
 import * as raceRecentResultRepo from '@/lib/repositories/raceRecentResultRepository';
 import * as raceMatchResultRepo from '@/lib/repositories/raceMatchResultRepository';
 import * as jobRunRepo from '@/lib/repositories/jobRunRepository';
-import { scrapeGradeSchedules, scrapeTodayRaceList } from '@/lib/scrapers/raceScheduleScraper';
+import { scrapeGradeSchedules } from '@/lib/scrapers/raceScheduleScraper';
 import { scrapeProgramByJyo, scrapeKaisaiTypeMap } from '@/lib/scrapers/raceProgramScraper';
 import { scrapeEntry } from '@/lib/scrapers/raceEntryScraper';
 import { scrapeRecentResults } from '@/lib/scrapers/raceRecentResultScraper';
@@ -113,13 +113,13 @@ async function runAll(
     summary: Record<string, unknown>
 ): Promise<void> {
     // STEP 1
-    const schedules = await runScheduleStep(targetDate, jobRunId, errors, summary);
-    if (!schedules) return; // STEP 1 失敗→以降スキップ
+    const ok = await runScheduleStep(targetDate, jobRunId, errors, summary);
+    if (!ok) return; // STEP 1 失敗→以降スキップ
 
-    // STEP 2 は runScheduleStep 内で実施済み（activeJyoCds を返す）
+    // STEP 2: race_schedules から当日開催中のグレード競輪場を取得
     const activeJyoCds = await getActiveJyoCds(targetDate);
     if (activeJyoCds.length === 0) {
-        console.log('[scrapeService] no active venues for today, stopping.');
+        console.log('[scrapeService] no active grade venues for today, stopping.');
         return;
     }
     summary.activeVenues = activeJyoCds;
@@ -131,7 +131,7 @@ async function runAll(
     await runEntryStep(targetDate, jobRunId, errors, summary);
 }
 
-/** STEP 1: レース日程スクレイピング */
+/** STEP 1: レース日程スクレイピング（グレードレースのみ保存） */
 async function runScheduleStep(
     targetDate: string,
     jobRunId: string,
@@ -141,17 +141,12 @@ async function runScheduleStep(
     const [year, month] = targetDate.split('-').map(Number);
 
     try {
-        // 1-A: グレードレース（GP〜G3）
+        // グレードレース（GP〜G3）のみ race_schedules に保存（F1/F2 は登録しない）
         const gradeSchedules = await scrapeGradeSchedules(year, month);
         await raceScheduleRepo.upsertRaceSchedules(gradeSchedules);
-        const knownJyoCds = new Set(gradeSchedules.map((s) => s.jyo_cd));
 
-        // 1-B: F1/F2 補完
-        const f1f2Schedules = await scrapeTodayRaceList(targetDate, knownJyoCds);
-        await raceScheduleRepo.upsertRaceSchedules(f1f2Schedules);
-
-        summary.schedulesUpserted = gradeSchedules.length + f1f2Schedules.length;
-        console.log(`[STEP 1] upserted ${summary.schedulesUpserted} race_schedules`);
+        summary.schedulesUpserted = gradeSchedules.length;
+        console.log(`[STEP 1] upserted ${summary.schedulesUpserted} grade race_schedules`);
         return true;
     } catch (err) {
         const msg = `[STEP 1] failed: ${err instanceof Error ? err.message : err}`;
