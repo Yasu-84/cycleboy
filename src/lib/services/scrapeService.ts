@@ -197,7 +197,7 @@ async function runProgramStep(
 
             const { programs, races } = await scrapeProgramByJyo(
                 jyo_cd,
-                schedule.id,
+                schedule,
                 targetDate,
                 kaisaiTypeMap
             );
