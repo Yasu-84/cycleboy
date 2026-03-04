@@ -27,17 +27,18 @@ export interface ProgramScrapeResult {
 /**
  * 特定競輪場のプログラムとレース一覧を取得する
  * @param jyo_cd - 競輪場コード
- * @param race_schedule_id - 紐付けるレース日程ID
+ * @param schedule - 紐付けるレース日程オブジェクト
  * @param targetDate - 取得対象日（YYYY-MM-DD）
  * @param kaisaiTypeMap - 開催区分マップ（日付 → 区分配列）
  */
 export async function scrapeProgramByJyo(
     jyo_cd: string,
-    race_schedule_id: string,
+    schedule: { id: string; start_date: string; grade: string },
     targetDate: string,
     kaisaiTypeMap: Map<string, string[]>
 ): Promise<ProgramScrapeResult> {
-    const path = `/race/course/?jyo_cd=${jyo_cd}`;
+    const kaisai_group_id = schedule.start_date.replace(/-/g, '') + jyo_cd;
+    const path = `/db/race_program/?kaisai_group_id=${kaisai_group_id}`;
     const $ = await fetchPage(path);
     await scrapeDelay();
 
@@ -61,7 +62,6 @@ export async function scrapeProgramByJyo(
     if (targetDates.length === 0) return { programs, races };
 
     for (const kaisai_date of targetDates) {
-        // グレードアイコンから取得
         const gradeIconEl = $('.Tab_RaceDaySelect li a[data-kaisai_date]')
             .filter((_, el) => {
                 try {
@@ -72,48 +72,52 @@ export async function scrapeProgramByJyo(
             })
             .first();
 
-        const grade =
-            parseGradeFromClass(gradeIconEl.find('[class*="Icon_GradeType"]').attr('class') ?? '') ??
-            'F1';
+        const grade = schedule.grade || 'F1';
 
         // プログラム種別: 初日/2日目/最終日 等（タブのテキストから）
-        const program_type = gradeIconEl.text().trim() || '開催';
+        const program_type = gradeIconEl.find('.schedule').text().trim() || '開催';
 
         // 開催区分
         const kaisai_type = kaisaiTypeMap.get(kaisai_date) ?? null;
 
         programs.push({
-            race_schedule_id,
+            race_schedule_id: schedule.id,
             kaisai_date,
             grade,
             kaisai_type,
             program_type,
         });
 
-        // レース一覧: .RaceList li から取得
-        // 各 li: レース番号、タイトル、車立数、発走時刻、締切時刻
-        $('.RaceList li').each((_, li) => {
+        const targetNetkeibaDate = kaisai_date.replace(/-/g, '');
+        // レース一覧: .RaceList_Main_Box から取得
+        $('.RaceList_Main_Box').each((_, box) => {
             try {
-                const raceNoText = $(li).find('.RaceNum, .Race_Num').text().trim();
-                const race_no = parseInt(raceNoText.replace(/[^\d]/g, ''), 10);
-                if (isNaN(race_no)) return;
-
                 // race_id は href から抽出
-                const href = $(li).find('a').attr('href') ?? '';
+                const href = $(box).find('a').attr('href') ?? '';
                 const netkeiba_race_id = extractRaceId(href);
                 if (!netkeiba_race_id) return;
 
+                // 対象日付プレフィックスチェック
+                if (!netkeiba_race_id.startsWith(targetNetkeibaDate)) return;
+
+                const raceNoText = $(box).find('.Race_Num span').text().trim();
+                const race_no = parseInt(raceNoText.replace(/[^\d]/g, ''), 10);
+                if (isNaN(race_no)) return;
+
                 // race_title
-                const race_title =
-                    $(li).find('.Race_Name, .RaceName, .RaceTitle').text().trim() || `第${race_no}レース`;
+                const race_title = $(box).find('.Race_Name').text().trim() || `第${race_no}レース`;
 
-                // 車立数
-                const carCountText = $(li).find('.Race_Syaryu').text().trim();
-                const car_count = parseInt(carCountText.replace(/[^\d]/g, ''), 10) || 9;
+                // 車立数, 発走・締切時刻
+                let raceDataText = $(box).find('.Race_Data').text().trim();
+                // 全角数字・コロンを半角に変換
+                raceDataText = raceDataText.replace(/[０-９：]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xfee0));
 
-                // 発走・締切時刻
-                const times = $(li).find('.RaceTime, .Race_Time').text().trim();
-                const { departure_time, deadline_time } = parseTimes(times);
+                const car_count_m = raceDataText.match(/(\d+)車/);
+                const car_count = car_count_m ? parseInt(car_count_m[1], 10) : 9;
+
+                const timeMatches = raceDataText.match(/(\d{1,2}:\d{2})/g);
+                const departure_time = timeMatches && timeMatches[0] ? timeMatches[0] : '00:00';
+                const deadline_time = timeMatches && timeMatches[1] ? timeMatches[1] : departure_time;
 
                 races.push({
                     // program_id は呼び出し元でセットする（UPSERT後に program.id を取得）
