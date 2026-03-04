@@ -1,7 +1,7 @@
 /** 今節成績・直近開催成績内の1レース */
 export interface RaceResult {
     race_name: string;
-    rank: number;
+    rank: number | string;
 }
 
 /** 今節成績（current_session）JSONB 構造 */

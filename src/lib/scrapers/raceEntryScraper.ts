@@ -68,24 +68,33 @@ export async function scrapeEntry(raceId: string): Promise<EntryScrapeResult> {
 
             // td[4]: 選手情報（player_name, prefecture, age, kinen, class_rank）
             const playerInfoTd = tds.eq(4);
-            const player_name = playerInfoTd.find('.PlayerName').text().trim();
+            const playerNameClone = playerInfoTd.find('.PlayerName').clone();
+            playerNameClone.children().remove();
+            const player_name = playerNameClone.text().trim();
+
             const fromText = playerInfoTd.find('.PlayerFrom').text().trim();
-            // fromText 例: "東京/35歳" または "東京 / 35歳"
-            const fromMatch = fromText.match(/^([^/／\d]+)[/／]\s*(\d+)/);
+            // fromText 例: "東京/35歳" や "神奈 35歳"
+            const fromMatch = fromText.match(/^([^/／\s\d]+)[/／\s]*(\d+)歳?/);
             const prefecture = fromMatch ? fromMatch[1].trim() : fromText.replace(/\d.*/, '').trim();
             const age = fromMatch ? toIntSafe(fromMatch[2]) : 0;
 
             const classText = playerInfoTd.find('.PlayerClass').text().trim();
-            // classText 例: "99期 / S1" または "99期　S1"
-            const classMatch = classText.match(/(\d+期)[^S]*?(S\d|A\d)/);
-            const kinen = classMatch ? classMatch[1] : classText.slice(0, 4);
-            const class_rank = classMatch ? classMatch[2] : '';
+            // 全角文字を半角に変換
+            const halfClassText = classText.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) =>
+                String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+            );
+            // classText 例: "99期 / S1" や "99期 ＳＳ"
+            const classMatch = halfClassText.match(/(\d+)期[^S]*?(S[S12]|A[123]|L1)/i);
+            const kinen = classMatch ? classMatch[1] : (halfClassText.match(/(\d+)期/)?.[1] ?? '');
+            const class_rank = classMatch ? classMatch[2].toUpperCase() : '';
 
             // td[5]: 競走得点
             const score = toFloatSafe(tds.eq(5).text().trim());
 
-            // td[6]: 脚質
-            const leg_type = tds.eq(6).text().trim();
+            // td[6]: 脚質 (要素内の span 等を除外してテキスト取得)
+            const legClone = tds.eq(6).clone();
+            legClone.find('span, div').remove();
+            const leg_type = legClone.text().trim();
 
             // td[7〜16]: 各種カウント・着回数
             const sprint_count = toIntSafe(tds.eq(7).text().trim());
@@ -162,9 +171,9 @@ function parseFormationPrediction($: ReturnType<typeof import('cheerio').load>):
     let currentLine: number[] = [];
 
     $('.DeployYosoWrap .DeployBox.Grid3 .DeployInBox').each((_, el) => {
-        const cls = $(el).attr('class') ?? '';
+        const hasSeparat = $(el).find('.WakuSeparat').length > 0;
 
-        if (cls.includes('WakuSeparat')) {
+        if (hasSeparat) {
             // ライン区切り: 現在のラインを確定
             if (currentLine.length > 0) {
                 lines.push({ sha_nos: [...currentLine] });

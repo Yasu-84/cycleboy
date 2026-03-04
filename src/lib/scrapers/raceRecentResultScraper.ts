@@ -37,15 +37,20 @@ export async function scrapeRecentResults(raceId: string): Promise<RaceRecentRes
             if (sha_no === 0) return;
 
             const playerInfoTd = tds.eq(4);
-            const player_name = playerInfoTd.find('.PlayerName').text().trim();
+            const playerNameClone = playerInfoTd.find('.PlayerName').clone();
+            playerNameClone.children().remove();
+            const player_name = playerNameClone.text().trim();
             const fromText = playerInfoTd.find('.PlayerFrom').text().trim();
-            const fromMatch = fromText.match(/^([^/／\d]+)[/／]\s*(\d+)/);
+            const fromMatch = fromText.match(/^([^/／\s\d]+)[/／\s]*(\d+)歳?/);
             const prefecture = fromMatch ? fromMatch[1].trim() : fromText.replace(/\d.*/, '').trim();
             const age = fromMatch ? toIntSafe(fromMatch[2]) : 0;
             const classText = playerInfoTd.find('.PlayerClass').text().trim();
-            const classMatch = classText.match(/(\d+期)[^S]*(S\d|A\d)/);
-            const kinen = classMatch ? classMatch[1] : classText.slice(0, 4);
-            const class_rank = classMatch ? classMatch[2] : '';
+            const halfClassText = classText.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) =>
+                String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+            );
+            const classMatch = halfClassText.match(/(\d+)期[^S]*?(S[S12]|A[123]|L1)/i);
+            const kinen = classMatch ? classMatch[1] : (halfClassText.match(/(\d+)期/)?.[1] ?? '');
+            const class_rank = classMatch ? classMatch[2].toUpperCase() : '';
 
             // 成績テーブルを持つコンテナを取得（行の次の要素、またはネストされた detail テーブル）
             // 実際の HTML 構造に応じて調整が必要な場合あり
@@ -97,14 +102,29 @@ function parseRecentSessions(
 ): SessionParseResult {
     // 今節: .detail_table_tbodyItem.GroupLeft を起点に同行内のセルから取得
     let current_session: CurrentSession | null = null;
-    const currentRaces: Array<{ race_name: string; rank: number }> = [];
+    const currentRaces: Array<{ race_name: string; rank: number | string }> = [];
 
-    $(playerRow).find('.detail_table_tbodyItem.GroupLeft ~ td, .detail_table_tbodyItem.GroupLeft').each((_, cell) => {
-        const raceName = $(cell).find('.RaceName').text().trim();
-        const rankText = $(cell).find('.result_no').text().trim();
-        if (raceName) {
-            const rank = toIntSafe(rankText);
-            currentRaces.push({ race_name: raceName, rank });
+    let firstTh = container.find('th.detail_table_tbodyInner.GroupLeft').first();
+    let currentCells;
+
+    if (firstTh.length > 0) {
+        currentCells = container.find('.detail_table_tbodyItem.GroupLeft').first().nextUntil('th.detail_table_tbodyInner.GroupLeft').addBack();
+    } else {
+        currentCells = container.find('.detail_table_tbodyItem.GroupLeft~td, .detail_table_tbodyItem.GroupLeft');
+    }
+
+    currentCells.each((_, cell) => {
+        const aTag = $(cell).find('a');
+        if (aTag.length > 0) {
+            const clone = aTag.clone();
+            clone.find('span').remove();
+            const raceName = clone.text().trim();
+            const rankText = $(cell).find('.result_no').text().trim();
+            if (raceName) {
+                const rankNum = parseInt(rankText, 10);
+                const rank = isNaN(rankNum) ? rankText : rankNum;
+                currentRaces.push({ race_name: raceName, rank });
+            }
         }
     });
 
@@ -120,15 +140,13 @@ function parseRecentSessions(
         try {
             // 開催情報ヘッダーから日付・グレード・競輪場を取得
             const headerText = $(block).text().trim();
-            const headerMatch = headerText.match(/(\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
-            const kaisai_date = headerMatch
-                ? headerMatch[1].replace(/\//g, '-')
-                : '';
+            const headerMatch = headerText.match(/^(\d{1,2}\/\d{1,2})/);
+            const kaisai_date = headerMatch ? headerMatch[1].replace(/\//g, '/') : '';
 
             const grade = $(block).find('[class*="Icon_GradeType"]').first().text().trim() || 'F1';
             const jyo_name = extractJyoNameFromBlock($, block);
 
-            const races: Array<{ race_name: string; rank: number }> = [];
+            const races: Array<{ race_name: string; rank: number | string }> = [];
 
             // ブロック以降の成績セルを取得
             let sibling = $(block).next();
@@ -136,7 +154,9 @@ function parseRecentSessions(
                 const raceName = sibling.find('.RaceName').text().trim();
                 const rankText = sibling.find('.result_no').text().trim();
                 if (raceName) {
-                    races.push({ race_name: raceName, rank: toIntSafe(rankText) });
+                    const rankNum = parseInt(rankText, 10);
+                    const rank = isNaN(rankNum) ? rankText : rankNum;
+                    races.push({ race_name: raceName, rank });
                 }
                 sibling = sibling.next();
             }
