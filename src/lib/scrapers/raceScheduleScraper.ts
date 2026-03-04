@@ -39,20 +39,20 @@ export async function scrapeGradeSchedules(
             const { start_date, end_date } = parsePeriod(periodText, year, month);
             if (!start_date || !end_date) return;
 
-            // グレードアイコン
-            const gradeIconClass = tds.eq(1).find('[class*="Icon_GradeType"]').attr('class') ?? '';
+            // 開催名（レース名）: td[1]
+            const kaisai_name = tds.eq(1).text().trim();
+
+            // グレードアイコン: td[2]
+            const gradeIconClass = tds.eq(2).find('[class*="Icon_GradeType"]').attr('class') ?? '';
             const grade = parseGradeFromClass(gradeIconClass);
             if (!grade) return;
 
-            // 競輪場リンク: href に jyo_cd が含まれる
-            const venueLink = tds.eq(2).find('a[href*="jyo_cd"]');
+            // 競輪場リンク: td[3]（href に jyo_cd が含まれる）
+            const venueLink = tds.eq(3).find('a[href*="jyo_cd"]');
             const href = venueLink.attr('href') ?? '';
             const jyo_cd = extractJyoCd(href);
             if (!jyo_cd) return;
             const jyo_name = venueLink.text().trim();
-
-            // 開催名
-            const kaisai_name = tds.eq(3).text().trim() || `${jyo_name}${grade}`;
 
             results.push({ jyo_cd, jyo_name, grade, kaisai_name, start_date, end_date });
         } catch {
@@ -91,25 +91,31 @@ export async function scrapeTodayRaceList(
             // 既にグレードレース側で拾っている場所はスキップ
             if (!jyo_cd || alreadyKnownJyoCds.has(jyo_cd)) return;
 
-            // 例: "大垣GIII"、"久留米FI" などのテキストから場名とグレードを分離する
+            // テキスト例: "小田原FII初日"、"久留米FI最終日"、"大垣GIII2日目" など
             const rawText = $(el).text().replace(/\s+/g, '');
             if (!rawText) return;
 
-            let jyo_name = rawText;
+            // ①日程表記（初日/最終日/2日目 など）を除去
+            const cleanText = rawText.replace(/(?:初日|最終日|\d+日目)$/, '');
+
+            // ②グレード表記を抽出（FII/FI/GIII/GII/GI/GP）し場名と分離
+            const gradeMatch = cleanText.match(/(GP|G(?:III|II|I)|F(?:II|I))$/i);
+            let jyo_name = cleanText;
             let grade = 'F1'; // デフォルト
-            const gradeMatch = rawText.match(/(G[I1-3]{1,3}|F[I12]{1,2})$/i);
+
             if (gradeMatch) {
                 const rawGrade = gradeMatch[1].toUpperCase();
-                // GIII 等から G3 へ正規化
-                if (rawGrade.includes('1') || rawGrade.includes('I')) grade = rawGrade.replace(/I/g, '1').replace('111', '3').replace('11', '2');
-                if (rawGrade === 'F11') grade = 'F2'; // II を置換したもの
-                if (rawGrade === 'G111') grade = 'G3';
-                if (rawGrade === 'G11') grade = 'G2';
-
-                jyo_name = rawText.replace(gradeMatch[1], ''); // "大垣" だけにする
+                // ローマ数字 → アラビア数字に変換
+                const gradeMap: Record<string, string> = {
+                    GP: 'GP', GI: 'G1', GII: 'G2', GIII: 'G3', FI: 'F1', FII: 'F2',
+                };
+                grade = gradeMap[rawGrade] ?? 'F1';
+                jyo_name = cleanText.slice(0, cleanText.length - gradeMatch[1].length);
             }
 
-            // 特に追加の開催名がない場合は場名＋グレードにする
+            if (!jyo_name) return;
+
+            // 開催名は場名＋グレード（例: "小田原F2"）
             const kaisai_name = `${jyo_name}${grade}`;
 
             results.push({
@@ -117,7 +123,7 @@ export async function scrapeTodayRaceList(
                 jyo_name,
                 grade,
                 kaisai_name,
-                start_date: targetDate, // 当日開催なので開始終了日は一旦同じとする
+                start_date: targetDate,
                 end_date: targetDate,
             });
         } catch {
