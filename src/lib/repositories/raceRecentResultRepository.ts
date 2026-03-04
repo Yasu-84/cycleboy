@@ -10,9 +10,12 @@ const TABLE = 'race_recent_results';
 export async function upsertRaceRecentResults(records: RaceRecentResultInput[]): Promise<void> {
     if (records.length === 0) return;
 
+    // 同一バッチ内の重複キー (netkeiba_race_id, sha_no) を除去（後勝ち）
+    const deduped = deduplicateByKey(records, (r) => `${r.netkeiba_race_id}:${r.sha_no}`);
+
     const { error } = await supabase
         .from(TABLE)
-        .upsert(records, { onConflict: 'netkeiba_race_id,sha_no', ignoreDuplicates: false });
+        .upsert(deduped, { onConflict: 'netkeiba_race_id,sha_no', ignoreDuplicates: false });
 
     if (error) throw new Error(`[raceRecentResultRepository.upsert] ${error.message}`);
 }
@@ -44,4 +47,13 @@ export async function deleteOlderThan(threshold: string): Promise<number> {
 
     if (error) throw new Error(`[raceRecentResultRepository.deleteOlderThan] ${error.message}`);
     return data?.length ?? 0;
+}
+
+/** 同一バッチ内のキー重複を除去（後勝ち） */
+function deduplicateByKey<T>(records: T[], keyFn: (r: T) => string): T[] {
+    const map = new Map<string, T>();
+    for (const r of records) {
+        map.set(keyFn(r), r);
+    }
+    return Array.from(map.values());
 }
