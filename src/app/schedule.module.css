@@ -1,0 +1,85 @@
+.dateLabel {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: var(--sp-xl);
+    color: var(--color-text);
+}
+
+/* ---- Grid ---- */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--sp-lg);
+}
+
+@media (min-width: 768px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ---- Card ---- */
+.card {
+    display: block;
+    background: var(--color-bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-lg) var(--sp-xl);
+    box-shadow: var(--shadow-card);
+    border-left: 4px solid var(--color-accent);
+    transition: box-shadow 0.2s, transform 0.15s;
+    cursor: pointer;
+    min-height: 44px;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+}
+
+.card:active {
+    transform: translateY(0);
+}
+
+.cardTop {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-sm);
+    margin-bottom: var(--sp-xs);
+}
+
+.jyoName {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.kaisaiName {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--sp-sm);
+    font-weight: 500;
+}
+
+.cardBottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-sm);
+}
+
+.programInfo {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.badges {
+    display: flex;
+    gap: var(--sp-xs);
+    flex-shrink: 0;
+}
