@@ -132,6 +132,14 @@ export async function run(options: PredictionOptions = {}): Promise<PredictionRe
                 errors.push(msg);
                 // 次のレースへ継続
             }
+
+            // APIレート制限回避のため、各レース処理後にディレイを追加
+            const remainingRaces = todayRaces.length - (successCount + errorCount);
+            if (remainingRaces > 0) {
+                const delay = 3000; // 3秒
+                console.log(`[predictionService] Waiting ${delay}ms before next race...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
         }
 
         summary.successCount = successCount;
@@ -198,7 +206,7 @@ async function callAI(
     prompt: string
 ): Promise<string> {
     // LLMのモデル名
-    const model = 'gemini-3.1-pro-preview';
+    const model = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash-exp';
 
     // APIキーを環境変数から取得
     const apiKey = process.env.GEMINI_API_KEY;
@@ -212,58 +220,109 @@ async function callAI(
     // プロンプトを構築
     const fullPrompt = `${prompt}\n\n## 【対象レースデータ】\n\n${raceData}\n\n## 【出力要求】\n\n上記のデータに基づいて、指定された出力フォーマットに従って予想を出力してください。`;
 
-    // AI APIを呼び出し
-    try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contents: [
-                    {
-                        parts: [
+        // レート制限回避のためのリトライロジック
+        const maxRetries = 3;
+        const baseDelay = 2000; // 2秒
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                console.log(`[predictionService] AI API call attempt ${attempt}/${maxRetries} for race_id=${raceId}`);
+                
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [
                             {
-                                text: fullPrompt
+                                parts: [
+                                    {
+                                        text: fullPrompt
+                                    }
+                                ]
                             }
-                        ]
-                    }
-                ],
-                generationConfig: {
-                    temperature: 0.7,
-                    topK: 40,
-                    topP: 0.95,
-                    maxOutputTokens: 8192,
+                        ],
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 8192,
+                        }
+                    })
+                });
+
+                // APIキーの問題を検出（401 Unauthorized）
+                if (response.status === 401) {
+                    const errorText = await response.text();
+                    console.error(`[predictionService] API key error (401): ${errorText}`);
+                    throw new Error(`Invalid API key. Please check GEMINI_API_KEY environment variable.`);
                 }
-            })
-        });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`AI API error ${response.status}: ${errorText}`);
+                // レート制限エラー（429）を検出
+                if (response.status === 429) {
+                    const errorText = await response.text();
+                    console.error(`[predictionService] Rate limit hit (429): ${errorText}`);
+                    if (attempt < maxRetries) {
+                        const delay = baseDelay * attempt; // 指数バックオフ
+                        console.log(`[predictionService] Retrying after ${delay}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    }
+                    throw new Error(`Rate limit exceeded after ${maxRetries} attempts`);
+                }
+
+                // モデルが見つからない（404）
+                if (response.status === 404) {
+                    const errorText = await response.text();
+                    console.error(`[predictionService] Model not found (404): ${errorText}`);
+                    throw new Error(`Model '${model}' not found. Please check GEMINI_MODEL environment variable.`);
+                }
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`[predictionService] AI API error ${response.status}: ${errorText}`);
+                    throw new Error(`AI API error ${response.status}: ${errorText}`);
+                }
+
+                let data: unknown;
+                let responseText = '';
+                try {
+                    responseText = await response.text();
+                    console.log(`[predictionService] AI API response text (first 500 chars): ${responseText.substring(0, 500)}`);
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error(`[predictionService] JSON parse error: ${parseError instanceof Error ? parseError.message : parseError}`);
+                    console.error(`[predictionService] Response text (first 1000 chars): ${responseText.substring(0, 1000)}`);
+                    console.error(`[predictionService] Response headers:`, Object.fromEntries(response.headers.entries()));
+                    // レスポンスがテキストでエラーメッセージを返している場合の処理
+                    if (responseText.includes('error') || responseText.includes('Error') || responseText.includes('An error')) {
+                        throw new Error(`AI API returned error response: ${responseText.substring(0, 500)}`);
+                    }
+                    throw new Error(`AI API returned invalid JSON: ${responseText.substring(0, 200)}...`);
+                }
+
+                // 型安全にアクセス
+                const candidates = (data as any)?.candidates;
+                const aiText = candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+                
+                if (!aiText) {
+                    console.error(`[predictionService] AI returned empty response. Data:`, JSON.stringify(data, null, 2));
+                    throw new Error('AI returned empty response');
+                }
+
+                return aiText;
+            } catch (err) {
+                if (attempt === maxRetries) {
+                    throw new Error(`Failed to call AI after ${maxRetries} attempts: ${err instanceof Error ? err.message : err}`);
+                }
+                // レート制限以外のエラーの場合は少し待ってリトライ
+                console.log(`[predictionService] Attempt ${attempt} failed, retrying...`);
+                await new Promise(resolve => setTimeout(resolve, baseDelay * attempt));
+            }
         }
 
-        let data: unknown;
-        let responseText = '';
-        try {
-            responseText = await response.text();
-            data = JSON.parse(responseText);
-        } catch (parseError) {
-            throw new Error(`AI API returned invalid JSON: ${responseText.substring(0, 200)}...`);
-        }
-
-        // 型安全にアクセス
-        const candidates = (data as any)?.candidates;
-        const aiText = candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-        
-        if (!aiText) {
-            throw new Error('AI returned empty response');
-        }
-
-        return aiText;
-    } catch (err) {
-        throw new Error(`Failed to call AI: ${err instanceof Error ? err.message : err}`);
-    }
+        throw new Error('Failed to call AI: Maximum retries exceeded');
 }
 
 /**

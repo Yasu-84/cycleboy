@@ -324,6 +324,7 @@ async function runPredictionStep(
     summary: Record<string, unknown>
 ): Promise<void> {
     try {
+        console.log(`[STEP 6] Starting prediction for targetDate=${targetDate}`);
         const predictionResult = await runPrediction({ targetDate });
         
         if (predictionResult.summary.skipped) {
@@ -337,6 +338,7 @@ async function runPredictionStep(
 
         // エラーを記録
         for (const error of predictionResult.errors) {
+            console.error(`[STEP 6] prediction error: ${error}`);
             errors.push(error);
             await jobRunRepo.recordJobError({
                 job_run_id: jobRunId,
@@ -349,6 +351,9 @@ async function runPredictionStep(
     } catch (err) {
         const msg = `[STEP 6] failed: ${err instanceof Error ? err.message : err}`;
         console.error(msg);
+        if (err instanceof Error && err.stack) {
+            console.error(`[STEP 6] error stack: ${err.stack}`);
+        }
         errors.push(msg);
         await jobRunRepo.recordJobError({
             job_run_id: jobRunId,
