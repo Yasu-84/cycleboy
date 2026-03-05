@@ -59,18 +59,11 @@ function formatTime(time: string): string {
 }
 
 function getRaceNoBgColor(raceNo: number): string {
-    // レース番号に応じた枠色背景
-    const colors: Record<number, string> = {
-        1: '#FFFFFF', 2: '#333333', 3: '#E5342E', 4: '#2255AA',
-        5: '#FFD700', 6: '#00843D', 7: '#FF8C00', 8: '#FF69B4',
-        9: '#800080', 10: '#E5342E', 11: '#2255AA', 12: '#FFD700',
-    };
-    return colors[raceNo] ?? '#666';
+    return '#FFFFFF';
 }
 
 function getRaceNoTextColor(raceNo: number): string {
-    const lightBg = [1, 5, 12];
-    return lightBg.includes(raceNo) ? '#333' : '#FFF';
+    return '#333';
 }
 
 // ------------------------------------------------------------------
@@ -209,7 +202,7 @@ export default async function RaceListPage({
                                 style={{
                                     backgroundColor: getRaceNoBgColor(race.race_no),
                                     color: getRaceNoTextColor(race.race_no),
-                                    border: race.race_no === 1 ? '1px solid #CCC' : 'none',
+                                    border: '1px solid #CCC',
                                 }}
                             >
                                 {race.race_no}R
