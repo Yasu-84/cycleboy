@@ -11,7 +11,7 @@ import type { JobRun } from '@/types/jobRun';
 const POLL_INTERVAL_MS = 3_000;
 const ADMIN_API_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY ?? '';
 
-type WorkflowType = 'scrape' | 'cleanup';
+type WorkflowType = 'scrape' | 'cleanup' | 'prediction';
 type StepType = 'all' | 'schedule' | 'program' | 'entry';
 
 interface TriggerOptions {
@@ -102,6 +102,53 @@ export default function AdminPage() {
                 setStatusMsg({
                     type: 'ok',
                     text: 'GitHub Actions に起動リクエストを送信しました。数秒後にジョブ履歴に反映されます。',
+                });
+                // 5秒後に履歴を再取得
+                setTimeout(() => void fetchJobRuns(), 5_000);
+            } else {
+                const json = (await res.json()) as { error?: string };
+                setStatusMsg({ type: 'err', text: json.error ?? `HTTP ${res.status}` });
+            }
+        } catch (err) {
+            setStatusMsg({ type: 'err', text: err instanceof Error ? err.message : String(err) });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ----------------------------------------------------------------
+    // AI予想実行
+    // ----------------------------------------------------------------
+
+    const triggerPrediction = async () => {
+        setLoading(true);
+        setStatusMsg(null);
+
+        try {
+            const body: Record<string, string | undefined> = {};
+            if (targetDate) body.target_date = targetDate;
+
+            const res = await fetch('/api/admin/prediction', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-admin-api-key': ADMIN_API_KEY,
+                },
+                body: JSON.stringify(body),
+            });
+
+            if (res.ok) {
+                const json = await res.json() as { message?: string; summary?: string; errors?: string[] };
+                let message = 'AI予想を実行しました。';
+                if (json.summary) {
+                    message += ` ${json.summary}`;
+                }
+                if (json.errors && json.errors.length > 0) {
+                    message += ` エラー: ${json.errors.join(', ')}`;
+                }
+                setStatusMsg({
+                    type: 'ok',
+                    text: message,
                 });
                 // 5秒後に履歴を再取得
                 setTimeout(() => void fetchJobRuns(), 5_000);
@@ -220,6 +267,27 @@ export default function AdminPage() {
                     )}
                 </div>
 
+                {/* === AI予想実行セクション === */}
+                <div className={styles.section}>
+                    <p className={styles.sectionTitle}>AI予想実行</p>
+
+                    {/* ボタングリッド */}
+                    <div className={styles.btnGrid}>
+                        <button
+                            id="btn-prediction"
+                            className={`${styles.btn} ${styles.btnPrimary} ${styles.btnFull}`}
+                            disabled={loading}
+                            onClick={() => triggerPrediction()}
+                        >
+                            🤖 AI予想実行（対象日付: {targetDate}）
+                        </button>
+                    </div>
+
+                    <p className={styles.dateLabel} style={{ marginTop: '8px', fontSize: '0.85rem', color: '#666' }}>
+                        ※ AI予想は対象日付の出走表データが必要です。先にスクレイピングを実行してください。
+                    </p>
+                </div>
+
                 {/* === ジョブ履歴セクション === */}
                 <div className={styles.section}>
                     <div className={styles.pollRow}>
@@ -282,6 +350,7 @@ function formatJobType(t: string): string {
         cron_scrape: 'スクレイプ',
         cron_cleanup: 'クリーンアップ',
         admin_scrape: 'スクレイプ(手動)',
+        admin_prediction: 'AI予想(手動)',
     };
     return map[t] ?? t;
 }

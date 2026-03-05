@@ -24,8 +24,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isValidDateString, isNotFutureDate } from '@/lib/utils/dateUtils';
 
-type Workflow = 'scrape' | 'cleanup';
-type Step = 'all' | 'schedule' | 'program' | 'entry';
+type Workflow = 'scrape' | 'cleanup' | 'prediction';
+type Step = 'all' | 'schedule' | 'program' | 'entry' | 'prediction';
 
 interface TriggerBody {
     workflow: Workflow;
@@ -33,8 +33,8 @@ interface TriggerBody {
     target_date?: string;
 }
 
-const VALID_WORKFLOWS: Workflow[] = ['scrape', 'cleanup'];
-const VALID_STEPS: Step[] = ['all', 'schedule', 'program', 'entry'];
+const VALID_WORKFLOWS: Workflow[] = ['scrape', 'cleanup', 'prediction'];
+const VALID_STEPS: Step[] = ['all', 'schedule', 'program', 'entry', 'prediction'];
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
     // 1. API キー認証
@@ -104,13 +104,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // 5. GitHub API workflow_dispatch 呼び出し
-    const workflowFile = workflow === 'scrape' ? 'scrape.yml' : 'cleanup.yml';
+    const workflowFile = workflow === 'scrape' ? 'scrape.yml' : workflow === 'cleanup' ? 'cleanup.yml' : 'prediction.yml';
     const githubApiUrl =
         `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFile}/dispatches`;
 
     const inputs: Record<string, string> = {};
     if (workflow === 'scrape') {
         inputs.step = step ?? 'all';
+        if (target_date) inputs.target_date = target_date;
+    } else if (workflow === 'prediction') {
         if (target_date) inputs.target_date = target_date;
     }
 

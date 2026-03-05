@@ -1,5 +1,5 @@
 /** エラー種別 */
-export type ErrorType = 'http' | 'parse' | 'db' | 'timeout';
+export type ErrorType = 'http' | 'parse' | 'db' | 'timeout' | 'prediction';
 
 /** job_errors テーブルの型定義 */
 export interface JobError {

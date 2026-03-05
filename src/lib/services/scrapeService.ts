@@ -7,7 +7,8 @@
  * STEP 3: レースプログラムスクレイピング（jyo_cd 単位）
  * STEP 4: 当日レース ID リストの特定
  * STEP 5: 出走表3種スクレイピング（jyo_cd 単位）
- * STEP 6: ジョブロック解放（finally）
+ * STEP 6: AI予想実行
+ * STEP 7: ジョブロック解放（finally）
  */
 import { getJstToday } from '@/lib/utils/dateUtils';
 import * as raceScheduleRepo from '@/lib/repositories/raceScheduleRepository';
@@ -22,6 +23,7 @@ import { scrapeProgramByJyo, scrapeKaisaiTypeMap } from '@/lib/scrapers/raceProg
 import { scrapeEntry } from '@/lib/scrapers/raceEntryScraper';
 import { scrapeRecentResults } from '@/lib/scrapers/raceRecentResultScraper';
 import { scrapeMatchResults } from '@/lib/scrapers/raceMatchResultScraper';
+import { run as runPrediction } from '@/lib/services/predictionService';
 import type { JobStep, TriggerSource } from '@/types/jobRun';
 
 export interface ScrapeOptions {
@@ -29,6 +31,7 @@ export interface ScrapeOptions {
     targetDate?: string;
     triggerSource?: TriggerSource;
     triggerBy?: string;
+    skipPrediction?: boolean; // AI予想をスキップするかどうか
 }
 
 export interface ScrapeResult {
@@ -74,13 +77,15 @@ export async function run(options: ScrapeOptions = {}): Promise<ScrapeResult> {
     try {
         // step 別に処理を分岐
         if (step === 'all') {
-            await runAll(targetDate, jobRunId, errors, summary);
+            await runAll(targetDate, jobRunId, errors, summary, options.skipPrediction);
         } else if (step === 'schedule') {
             await runScheduleStep(targetDate, jobRunId, errors, summary);
         } else if (step === 'program') {
             await runProgramStep(targetDate, jobRunId, errors, summary);
         } else if (step === 'entry') {
             await runEntryStep(targetDate, jobRunId, errors, summary);
+        } else if (step === 'prediction') {
+            await runPredictionStep(targetDate, jobRunId, errors, summary);
         } else if (step === 'cleanup') {
             // cleanup は cleanupService で処理
             throw new Error('Use cleanupService for cleanup step.');
@@ -110,7 +115,8 @@ async function runAll(
     targetDate: string,
     jobRunId: string,
     errors: string[],
-    summary: Record<string, unknown>
+    summary: Record<string, unknown>,
+    skipPrediction?: boolean
 ): Promise<void> {
     // STEP 1
     const ok = await runScheduleStep(targetDate, jobRunId, errors, summary);
@@ -129,6 +135,11 @@ async function runAll(
 
     // STEP 5
     await runEntryStep(targetDate, jobRunId, errors, summary);
+
+    // STEP 6: AI予想（スキップオプションがあれば実行しない）
+    if (!skipPrediction) {
+        await runPredictionStep(targetDate, jobRunId, errors, summary);
+    }
 }
 
 /** STEP 1: レース日程スクレイピング（グレードレースのみ保存） */
@@ -303,6 +314,50 @@ async function runEntryStep(
     summary.entrySuccess = entrySuccessCount;
     summary.entryError = entryErrorCount;
     console.log(`[STEP 5] done  success=${entrySuccessCount}  error=${entryErrorCount}`);
+}
+
+/** STEP 6: AI予想実行 */
+async function runPredictionStep(
+    targetDate: string,
+    jobRunId: string,
+    errors: string[],
+    summary: Record<string, unknown>
+): Promise<void> {
+    try {
+        const predictionResult = await runPrediction({ targetDate });
+        
+        if (predictionResult.summary.skipped) {
+            console.log('[STEP 6] prediction skipped (no races found).');
+            summary.predictionSkipped = true;
+        } else {
+            summary.predictionSuccess = predictionResult.summary.successCount;
+            summary.predictionError = predictionResult.summary.errorCount;
+            console.log(`[STEP 6] done  success=${predictionResult.summary.successCount}  error=${predictionResult.summary.errorCount}`);
+        }
+
+        // エラーを記録
+        for (const error of predictionResult.errors) {
+            errors.push(error);
+            await jobRunRepo.recordJobError({
+                job_run_id: jobRunId,
+                step: 'prediction',
+                error_type: 'prediction',
+                message: error,
+                detail: null,
+            });
+        }
+    } catch (err) {
+        const msg = `[STEP 6] failed: ${err instanceof Error ? err.message : err}`;
+        console.error(msg);
+        errors.push(msg);
+        await jobRunRepo.recordJobError({
+            job_run_id: jobRunId,
+            step: 'prediction',
+            error_type: 'prediction',
+            message: msg,
+            detail: null,
+        });
+    }
 }
 
 // ----------------------------------------------------------------
