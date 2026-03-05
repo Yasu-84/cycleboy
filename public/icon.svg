@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#2255AA" />
+  
+  <!-- Bicycle icon -->
+  <g fill="#FFFFFF" transform="translate(15, 15) scale(0.7)">
+    <!-- Wheels -->
+    <circle cx="20" cy="50" r="15" stroke="#FFFFFF" stroke-width="4" fill="none" />
+    <circle cx="70" cy="50" r="15" stroke="#FFFFFF" stroke-width="4" fill="none" />
+    
+    <!-- Frame -->
+    <path d="M20 50 L35 30 L55 30 L70 50" stroke="#FFFFFF" stroke-width="4" fill="none" />
+    <path d="M35 30 L20 20" stroke="#FFFFFF" stroke-width="4" fill="none" />
+    <path d="M55 30 L70 50 L55 50" stroke="#FFFFFF" stroke-width="4" fill="none" />
+    
+    <!-- Seat -->
+    <rect x="15" y="15" width="10" height="5" fill="#FFFFFF" rx="2" />
+    
+    <!-- Handlebars -->
+    <path d="M70 20 L70 30" stroke="#FFFFFF" stroke-width="4" />
+    <path d="M65 20 L75 20" stroke="#FFFFFF" stroke-width="4" />
+  </g>
+</svg>
