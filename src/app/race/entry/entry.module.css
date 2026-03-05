@@ -162,24 +162,26 @@ thead .stickyCol {
 
 .colWaku {
     left: 0;
-    min-width: 32px;
-    width: 32px;
+    min-width: 28px;
+    width: 28px;
+    padding: 2px !important;
 }
 
 .colSha {
-    left: 32px;
-    min-width: 32px;
-    width: 32px;
+    left: 28px;
+    min-width: 28px;
+    width: 28px;
+    padding: 2px !important;
 }
 
 .colPlayer {
-    left: 64px;
+    left: 56px;
     min-width: 110px;
     text-align: left !important;
 }
 
 .colPlayerShort {
-    left: 64px;
+    left: 56px;
     min-width: 90px;
     text-align: left !important;
 }
