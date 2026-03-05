@@ -243,8 +243,18 @@ async function callAI(
             throw new Error(`AI API error ${response.status}: ${errorText}`);
         }
 
-        const data = await response.json();
-        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+        let data: unknown;
+        let responseText = '';
+        try {
+            responseText = await response.text();
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            throw new Error(`AI API returned invalid JSON: ${responseText.substring(0, 200)}...`);
+        }
+
+        // 型安全にアクセス
+        const candidates = (data as any)?.candidates;
+        const aiText = candidates?.[0]?.content?.parts?.[0]?.text ?? '';
         
         if (!aiText) {
             throw new Error('AI returned empty response');

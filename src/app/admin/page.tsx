@@ -247,12 +247,12 @@ export default function AdminPage() {
                             className={`${styles.btn} ${styles.btnDanger}`}
                             disabled={loading}
                             onClick={() => {
-                                if (window.confirm('7日以上前のデータを削除します。よろしいですか？')) {
+                                if (window.confirm('31日以上前のデータを削除します。よろしいですか？')) {
                                     void triggerWorkflow({ workflow: 'cleanup' });
                                 }
                             }}
                         >
-                            🗑 削除処理（7日以上前のデータ）
+                            🗑 削除処理（31日以上前のデータ）
                         </button>
                     </div>
 
