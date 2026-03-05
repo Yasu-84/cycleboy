@@ -5,6 +5,12 @@ import styles from './schedule.module.css';
 // ------------------------------------------------------------------
 // 型定義
 // ------------------------------------------------------------------
+interface Program {
+  kaisai_date: string;
+  program_type: string;
+  kaisai_type: string[] | null;
+}
+
 interface ScheduleWithProgram {
   id: string;
   jyo_cd: string;
@@ -13,9 +19,7 @@ interface ScheduleWithProgram {
   kaisai_name: string;
   start_date: string;
   end_date: string;
-  program_type: string;
-  kaisai_type: string[] | null;
-  kaisai_date: string;
+  programs: Program[];
 }
 
 // ------------------------------------------------------------------
@@ -81,6 +85,17 @@ function getTodayJST(): string {
 // データ取得
 // ------------------------------------------------------------------
 async function getSchedules(targetDate: string): Promise<ScheduleWithProgram[]> {
+  // targetDate (YYYY-MM-DD) から当月の初日と末日を計算する
+  const [yearStr, monthStr] = targetDate.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+
+  // 初日
+  const firstDay = `${year}-${String(month).padStart(2, '0')}-01`;
+  // 末日 (翌月0日)
+  const lastDayDate = new Date(year, month, 0);
+  const lastDay = `${year}-${String(month).padStart(2, '0')}-${String(lastDayDate.getDate()).padStart(2, '0')}`;
+
   const { data, error } = await supabase
     .from('race_schedules')
     .select(`
@@ -97,43 +112,37 @@ async function getSchedules(targetDate: string): Promise<ScheduleWithProgram[]> 
         kaisai_type
       )
     `)
-    .lte('start_date', targetDate)
-    .gte('end_date', targetDate);
+    .lte('start_date', lastDay)
+    .gte('end_date', firstDay);
 
   if (error) throw new Error(`[getSchedules] ${error.message}`);
   if (!data) return [];
 
   const result: ScheduleWithProgram[] = data.map((s: any) => {
-    // 該当する日付のプログラム情報を探す
-    const prog = s.programs?.find((p: any) => p.kaisai_date === targetDate) || s.programs?.[0];
-
-    // プログラム情報の推測（DBにない場合でも開催期間から表示）
-    let programType = prog?.program_type || '';
-    if (!programType) {
-      if (s.start_date === targetDate) {
-        programType = '初日';
-      } else if (s.end_date === targetDate) {
-        programType = '最終日';
-      } else {
-        programType = '開催中';
-      }
-    }
+    // 取得したプログラムを日付順にソートする
+    const sortedPrograms = (s.programs || []).sort((a: any, b: any) =>
+      a.kaisai_date.localeCompare(b.kaisai_date)
+    );
 
     return {
-      id: s.id, // race_schedules.id
+      id: s.id,
       jyo_cd: s.jyo_cd,
       jyo_name: s.jyo_name,
       grade: s.grade,
       kaisai_name: s.kaisai_name,
       start_date: s.start_date,
       end_date: s.end_date,
-      program_type: programType,
-      kaisai_type: prog?.kaisai_type || null,
-      kaisai_date: targetDate, // リンク用にターゲット日付をセット
+      programs: sortedPrograms,
     };
   });
 
-  result.sort((a, b) => (GRADE_ORDER[a.grade] ?? 99) - (GRADE_ORDER[b.grade] ?? 99));
+  // 開始日順、同日の場合はグレード順などでソート
+  result.sort((a, b) => {
+    if (a.start_date !== b.start_date) {
+      return a.start_date < b.start_date ? -1 : 1;
+    }
+    return (GRADE_ORDER[a.grade] ?? 99) - (GRADE_ORDER[b.grade] ?? 99);
+  });
   return result;
 }
 
@@ -145,49 +154,69 @@ export const revalidate = 60; // ISR 60秒
 export default async function SchedulePage() {
   const today = getTodayJST();
   const schedules = await getSchedules(today);
+  const displayMonth = `${today.split('-')[0]}年${parseInt(today.split('-')[1], 10)}月`;
 
   return (
     <div className="container">
-      <h1 className={styles.dateLabel}>📅 {formatDateJa(today)}</h1>
+      <h1 className={styles.dateLabel}>📅 {displayMonth}の開催日程</h1>
 
       {schedules.length === 0 ? (
-        <div className="empty-message">本日の開催はありません</div>
+        <div className="empty-message">今月の開催はありません</div>
       ) : (
         <div className={styles.grid}>
-          {schedules.map((s) => (
-            <Link
-              key={s.id}
-              href={`/race_list?date=${s.kaisai_date.replace(/-/g, '')}&jyo_cd=${s.jyo_cd}`}
-              className={styles.card}
-            >
-              <div className={styles.cardTop}>
-                <span
-                  className={`grade-badge ${getGradeBadgeClass(s.grade)}`}
-                  aria-label={`グレード ${getGradeLabel(s.grade)}`}
-                >
-                  {getGradeLabel(s.grade)}
-                </span>
-                <span className={styles.jyoName}>{s.jyo_name}</span>
-              </div>
-              <div className={styles.kaisaiName}>{s.kaisai_name}</div>
-              <div className={styles.cardBottom}>
-                <span className={styles.programInfo}>
-                  {s.program_type}{'　'}{formatPeriod(s.start_date, s.end_date)}
-                </span>
-                <div className={styles.badges}>
-                  {getKaisaiTypeBadge(s.kaisai_type).map((badge) => (
-                    <span
-                      key={badge.label}
-                      className={`kaisai-badge ${badge.className}`}
-                      aria-label={`開催区分 ${badge.label}`}
-                    >
-                      {badge.label}
-                    </span>
-                  ))}
+          {schedules.map((s) => {
+            // プログラムからユニークな開催区分（ナイター等）を抽出
+            const typesSet = new Set<string>();
+            s.programs.forEach((p) => {
+              if (p.kaisai_type) p.kaisai_type.forEach((t) => typesSet.add(t));
+            });
+            const uniqueTypes = Array.from(typesSet);
+
+            return (
+              <div key={s.id} className={styles.card}>
+                <div className={styles.cardTop}>
+                  <span
+                    className={`grade-badge ${getGradeBadgeClass(s.grade)}`}
+                    aria-label={`グレード ${getGradeLabel(s.grade)}`}
+                  >
+                    {getGradeLabel(s.grade)}
+                  </span>
+                  <span className={styles.jyoName}>{s.jyo_name}</span>
                 </div>
+                <div className={styles.kaisaiName}>{s.kaisai_name}</div>
+                <div className={styles.cardBottom}>
+                  <span className={styles.programInfo}>
+                    開催　{formatPeriod(s.start_date, s.end_date)}
+                  </span>
+                  <div className={styles.badges}>
+                    {getKaisaiTypeBadge(uniqueTypes).map((badge) => (
+                      <span
+                        key={badge.label}
+                        className={`kaisai-badge ${badge.className}`}
+                        aria-label={`開催区分 ${badge.label}`}
+                      >
+                        {badge.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {s.programs.length > 0 && (
+                  <div className={styles.dayLinks}>
+                    {s.programs.map((p) => (
+                      <Link
+                        key={p.kaisai_date}
+                        href={`/race_list?date=${p.kaisai_date.replace(/-/g, '')}&jyo_cd=${s.jyo_cd}`}
+                        className={styles.dayLink}
+                      >
+                        {p.program_type}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
