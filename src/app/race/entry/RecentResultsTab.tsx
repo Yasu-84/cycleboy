@@ -106,10 +106,10 @@ export default function RecentResultsTab({ results }: RecentResultsTabProps) {
                     {results.map((r) => (
                         <tr key={r.sha_no}>
                             <td className={`${styles.stickyCol} ${styles.colWaku} ${styles.wakuCell}`}>
-                                <span className={`${styles.wakuBadge} ${getWakuClass(r.waku_no)}`}>{r.waku_no}</span>
+                                <span className={`${styles.wakuBadge} ${styles.shaBadge}`}>{r.waku_no}</span>
                             </td>
                             <td className={`${styles.stickyCol} ${styles.colSha} ${styles.wakuCell}`}>
-                                <span className={`${styles.wakuBadge} ${getWakuClass(r.waku_no)}`}>{r.sha_no}</span>
+                                <span className={`${styles.wakuBadge} ${getWakuClass(r.sha_no)}`}>{r.sha_no}</span>
                             </td>
                             <td className={`${styles.stickyCol} ${styles.colPlayer}`}>
                                 <div className={styles.playerName}>{r.player_name}</div>

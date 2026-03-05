@@ -58,12 +58,12 @@ export default function BasicInfoTab({ entries }: BasicInfoTabProps) {
                     {entries.map((e) => (
                         <tr key={e.sha_no}>
                             <td className={`${styles.stickyCol} ${styles.colWaku} ${styles.wakuCell}`}>
-                                <span className={`${styles.wakuBadge} ${getWakuClass(e.waku_no)}`}>
+                                <span className={`${styles.wakuBadge} ${styles.shaBadge}`}>
                                     {e.waku_no}
                                 </span>
                             </td>
                             <td className={`${styles.stickyCol} ${styles.colSha} ${styles.wakuCell}`}>
-                                <span className={`${styles.wakuBadge} ${getWakuClass(e.waku_no)}`}>
+                                <span className={`${styles.wakuBadge} ${getWakuClass(e.sha_no)}`}>
                                     {e.sha_no}
                                 </span>
                             </td>
@@ -102,7 +102,7 @@ export default function BasicInfoTab({ entries }: BasicInfoTabProps) {
                         .filter((e) => e.comment)
                         .map((e) => (
                             <div key={e.sha_no} className={styles.commentRow}>
-                                <span className={`${styles.commentWaku} ${getWakuClass(e.waku_no)}`}>
+                                <span className={`${styles.commentWaku} ${getWakuClass(e.sha_no)}`}>
                                     {e.sha_no}
                                 </span>
                                 <span className={styles.commentName}>{e.player_name}</span>

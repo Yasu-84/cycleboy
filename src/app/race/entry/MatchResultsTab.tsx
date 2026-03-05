@@ -39,7 +39,7 @@ export default function MatchResultsTab({ results }: MatchResultsTabProps) {
                         <th className={styles.colMatch}>総合</th>
                         {results.map((r) => (
                             <th key={r.sha_no} className={styles.colMatch}>
-                                <span className={`${styles.matchHeaderBadge} ${getWakuClass(r.waku_no)}`}>
+                                <span className={`${styles.matchHeaderBadge} ${getWakuClass(r.sha_no)}`}>
                                     {r.sha_no}
                                 </span>
                                 <br />
@@ -54,10 +54,10 @@ export default function MatchResultsTab({ results }: MatchResultsTabProps) {
                     {results.map((row) => (
                         <tr key={row.sha_no}>
                             <td className={`${styles.stickyCol} ${styles.colWaku} ${styles.wakuCell}`}>
-                                <span className={`${styles.wakuBadge} ${getWakuClass(row.waku_no)}`}>{row.waku_no}</span>
+                                <span className={`${styles.wakuBadge} ${styles.shaBadge}`}>{row.waku_no}</span>
                             </td>
                             <td className={`${styles.stickyCol} ${styles.colSha} ${styles.wakuCell}`}>
-                                <span className={`${styles.wakuBadge} ${getWakuClass(row.waku_no)}`}>{row.sha_no}</span>
+                                <span className={`${styles.wakuBadge} ${getWakuClass(row.sha_no)}`}>{row.sha_no}</span>
                             </td>
                             <td className={`${styles.stickyCol} ${styles.colPlayerShort}`}>
                                 <strong>{row.player_name}</strong>

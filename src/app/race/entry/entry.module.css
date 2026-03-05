@@ -257,6 +257,13 @@ tbody .stickyCol {
     line-height: 1;
 }
 
+/* ---- 車番バッジ（白で統一） ---- */
+.shaBadge {
+    background-color: #FFFFFF;
+    border: 1px solid #CCCCCC;
+    color: #333;
+}
+
 /* ---- 選手情報 ---- */
 .playerName {
     font-size: 13px;

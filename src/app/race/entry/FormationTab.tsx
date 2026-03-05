@@ -47,7 +47,7 @@ export default function FormationTab({ entries }: FormationTabProps) {
                                 <div key={shaNo} className={styles.chipGroup}>
                                     {chipIdx > 0 && <span className={styles.arrow}>→</span>}
                                     <div className={styles.playerChip}>
-                                        <span className={`${styles.chipWaku} ${getWakuClass(wakuNo)}`}>
+                                        <span className={`${styles.chipWaku} ${getWakuClass(shaNo)}`}>
                                             {shaNo}
                                         </span>
                                         <span className={styles.chipName}>
