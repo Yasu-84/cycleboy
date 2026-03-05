@@ -2,7 +2,7 @@
  * データ削除サービス
  *
  * 実行タイミング: 毎日 JST AM05:00
- * 閾値: 実行時 JST 日付 - 7 日
+ * 閾値: 実行時 JST 日付 - 31 日
  *
  * 削除順序（RESTRICT FK に従い子→親の順）:
  *   1. race_match_results
@@ -22,7 +22,7 @@ import * as raceScheduleRepo from '@/lib/repositories/raceScheduleRepository';
 import * as jobRunRepo from '@/lib/repositories/jobRunRepository';
 import type { TriggerSource } from '@/types/jobRun';
 
-const RETAIN_DAYS = 7;
+const RETAIN_DAYS = 31;
 
 export interface CleanupOptions {
     triggerSource?: TriggerSource;
