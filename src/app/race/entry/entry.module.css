@@ -67,7 +67,7 @@
    ================================================================ */
 .tabBar {
     display: flex;
-    position: relative;
+    position: sticky;
     top: var(--header-height);
     z-index: 50;
     background: var(--color-bg);
