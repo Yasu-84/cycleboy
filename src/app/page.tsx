@@ -82,40 +82,54 @@ function getTodayJST(): string {
 // ------------------------------------------------------------------
 async function getSchedules(targetDate: string): Promise<ScheduleWithProgram[]> {
   const { data, error } = await supabase
-    .from('programs')
+    .from('race_schedules')
     .select(`
-      kaisai_date,
-      program_type,
-      kaisai_type,
-      race_schedules!inner (
-        id,
-        jyo_cd,
-        jyo_name,
-        grade,
-        kaisai_name,
-        start_date,
-        end_date
+      id,
+      jyo_cd,
+      jyo_name,
+      grade,
+      kaisai_name,
+      start_date,
+      end_date,
+      programs (
+        kaisai_date,
+        program_type,
+        kaisai_type
       )
     `)
-    .eq('kaisai_date', targetDate);
+    .lte('start_date', targetDate)
+    .gte('end_date', targetDate);
 
   if (error) throw new Error(`[getSchedules] ${error.message}`);
   if (!data) return [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result: ScheduleWithProgram[] = data.map((p: any) => {
-    const rs = p.race_schedules;
+  const result: ScheduleWithProgram[] = data.map((s: any) => {
+    // 該当する日付のプログラム情報を探す
+    const prog = s.programs?.find((p: any) => p.kaisai_date === targetDate) || s.programs?.[0];
+
+    // プログラム情報の推測（DBにない場合でも開催期間から表示）
+    let programType = prog?.program_type || '';
+    if (!programType) {
+      if (s.start_date === targetDate) {
+        programType = '初日';
+      } else if (s.end_date === targetDate) {
+        programType = '最終日';
+      } else {
+        programType = '開催中';
+      }
+    }
+
     return {
-      id: rs.id,
-      jyo_cd: rs.jyo_cd,
-      jyo_name: rs.jyo_name,
-      grade: rs.grade,
-      kaisai_name: rs.kaisai_name,
-      start_date: rs.start_date,
-      end_date: rs.end_date,
-      program_type: p.program_type,
-      kaisai_type: p.kaisai_type,
-      kaisai_date: p.kaisai_date,
+      id: s.id, // race_schedules.id
+      jyo_cd: s.jyo_cd,
+      jyo_name: s.jyo_name,
+      grade: s.grade,
+      kaisai_name: s.kaisai_name,
+      start_date: s.start_date,
+      end_date: s.end_date,
+      program_type: programType,
+      kaisai_type: prog?.kaisai_type || null,
+      kaisai_date: targetDate, // リンク用にターゲット日付をセット
     };
   });
 

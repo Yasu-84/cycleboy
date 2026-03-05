@@ -13,6 +13,11 @@
     padding: var(--sp-xs) 0;
     min-height: 44px;
     transition: opacity 0.15s;
+    /* button要素のスタイルリセット */
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
 }
 
 .backLink:hover {
