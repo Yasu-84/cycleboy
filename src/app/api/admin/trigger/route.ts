@@ -130,9 +130,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
         if (!githubRes.ok) {
             const errorText = await githubRes.text();
-            console.error(`[trigger] GitHub API error ${githubRes.status}: ${errorText}`);
+            const contentType = githubRes.headers.get('content-type') ?? 'unknown';
+            console.error(`[trigger] GitHub API error ${githubRes.status}`);
+            console.error(`[trigger] Content-Type: ${contentType}`);
+            console.error(`[trigger] Response text: ${errorText.substring(0, 500)}`);
             return NextResponse.json(
-                { error: `GitHub API returned ${githubRes.status}` },
+                { error: `GitHub API returned ${githubRes.status}`, details: errorText.substring(0, 200) },
                 { status: 502 }
             );
         }

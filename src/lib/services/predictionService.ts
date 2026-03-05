@@ -211,8 +211,12 @@ async function callAI(
     // APIキーを環境変数から取得
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-        throw new Error('GEMINI_API_KEY is not set');
+        console.error('[predictionService] GEMINI_API_KEY is not set in environment variables');
+        throw new Error('GEMINI_API_KEY is not set. Please check your environment variables.');
     }
+    
+    console.log(`[predictionService] Using model: ${model}`);
+    console.log(`[predictionService] API key length: ${apiKey.length}`);
 
     // レースデータを整形
     const raceData = formatRaceData(raceId, entries, recentResults, matchResults);
@@ -289,17 +293,21 @@ async function callAI(
                 let responseText = '';
                 try {
                     responseText = await response.text();
+                    console.log(`[predictionService] AI API response status: ${response.status}`);
                     console.log(`[predictionService] AI API response text (first 500 chars): ${responseText.substring(0, 500)}`);
                     data = JSON.parse(responseText);
                 } catch (parseError) {
-                    console.error(`[predictionService] JSON parse error: ${parseError instanceof Error ? parseError.message : parseError}`);
+                    const parseErrorMessage = parseError instanceof Error ? parseError.message : String(parseError);
+                    console.error(`[predictionService] JSON parse error: ${parseErrorMessage}`);
+                    console.error(`[predictionService] Response status: ${response.status}`);
                     console.error(`[predictionService] Response text (first 1000 chars): ${responseText.substring(0, 1000)}`);
                     console.error(`[predictionService] Response headers:`, Object.fromEntries(response.headers.entries()));
+                    
                     // レスポンスがテキストでエラーメッセージを返している場合の処理
                     if (responseText.includes('error') || responseText.includes('Error') || responseText.includes('An error')) {
-                        throw new Error(`AI API returned error response: ${responseText.substring(0, 500)}`);
+                        throw new Error(`AI API returned error response (status ${response.status}): ${responseText.substring(0, 500)}`);
                     }
-                    throw new Error(`AI API returned invalid JSON: ${responseText.substring(0, 200)}...`);
+                    throw new Error(`AI API returned invalid JSON (status ${response.status}): ${responseText.substring(0, 200)}...`);
                 }
 
                 // 型安全にアクセス

@@ -93,7 +93,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         });
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
+        const stack = err instanceof Error ? err.stack : undefined;
         console.error(`[prediction API] error: ${message}`);
+        if (stack) {
+            console.error(`[prediction API] stack trace: ${stack}`);
+        }
 
         // ジョブ実行失敗を記録
         if (jobRunId) {
@@ -102,9 +106,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             });
         }
 
+        // エラーの種類に応じて適切なステータスコードを返す
+        let statusCode = 500;
+        let errorMessage = 'Failed to execute prediction';
+        
+        if (message.includes('GEMINI_API_KEY is not set')) {
+            statusCode = 500;
+            errorMessage = 'AI API configuration error: GEMINI_API_KEY is not set';
+        } else if (message.includes('Invalid API key')) {
+            statusCode = 500;
+            errorMessage = 'AI API configuration error: Invalid GEMINI_API_KEY';
+        } else if (message.includes('Rate limit exceeded')) {
+            statusCode = 429;
+            errorMessage = 'AI API rate limit exceeded. Please try again later.';
+        } else if (message.includes('Model') && message.includes('not found')) {
+            statusCode = 500;
+            errorMessage = 'AI API configuration error: Model not found';
+        } else if (message.includes('AI API returned')) {
+            statusCode = 500;
+            errorMessage = `AI API error: ${message}`;
+        }
+
         return NextResponse.json(
-            { error: 'Failed to execute prediction' },
-            { status: 500 }
+            { error: errorMessage, details: message },
+            { status: statusCode }
         );
     }
 }
