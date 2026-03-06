@@ -3,8 +3,6 @@
  *
  * 出走表のスクレイピング完了後、AI予想を実行して予想情報を自動生成
  */
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import * as raceRepo from '@/lib/repositories/raceRepository';
 import * as raceEntryRepo from '@/lib/repositories/raceEntryRepository';
 import * as raceRecentResultRepo from '@/lib/repositories/raceRecentResultRepository';
@@ -53,7 +51,7 @@ interface RecentResultData {
         jyo_name: string;
         races: Array<{
             race_name: string;
-        rank: number | string;
+            rank: number | string;
         }>;
     } | null;
     recent3: {
@@ -119,10 +117,10 @@ export async function run(options: PredictionOptions = {}): Promise<PredictionRe
             try {
                 // レース単位で予想を実行
                 const prediction = await generatePrediction(raceId);
-                
+
                 // 予想情報を保存
                 await racePredictionRepo.upsertRacePrediction(prediction);
-                
+
                 successCount++;
                 console.log(`[predictionService] prediction generated for race_id=${raceId}`);
             } catch (err) {
@@ -204,12 +202,11 @@ async function generatePrediction(raceId: string): Promise<RacePredictionInput> 
  * 予想プロンプトを読み込む
  */
 function loadPrompt(): string {
-    const promptPath = join(process.cwd(), 'docs', 'prediction-prompt.txt');
-    try {
-        return readFileSync(promptPath, 'utf-8');
-    } catch (err) {
-        throw new Error(`Failed to load prompt file: ${err instanceof Error ? err.message : err}`);
+    const prompt = process.env.GEM_SYSTEM_PROMPT;
+    if (!prompt) {
+        throw new Error('GEM_SYSTEM_PROMPT is not set. Please check your environment variables.');
     }
+    return prompt;
 }
 
 /**
@@ -231,7 +228,7 @@ async function callAI(
         console.error('[predictionService] GEMINI_API_KEY is not set in environment variables');
         throw new Error('GEMINI_API_KEY is not set. Please check your environment variables.');
     }
-    
+
     console.log(`[predictionService] Using model: ${model}`);
     console.log(`[predictionService] API key length: ${apiKey.length}`);
 
@@ -248,7 +245,7 @@ async function callAI(
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
             console.log(`[predictionService] AI API call attempt ${attempt}/${maxRetries} for race_id=${raceId}`);
-            
+
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: {
@@ -319,7 +316,7 @@ async function callAI(
                 console.error(`[predictionService] Response status: ${response.status}`);
                 console.error(`[predictionService] Response text (first 1000 chars): ${responseText.substring(0, 1000)}`);
                 console.error(`[predictionService] Response headers:`, Object.fromEntries(response.headers.entries()));
-                
+
                 // レスポンスがテキストでエラーメッセージを返している場合の処理
                 if (responseText.includes('error') || responseText.includes('Error') || responseText.includes('An error')) {
                     throw new Error(`AI API returned error response (status ${response.status}): ${responseText.substring(0, 500)}`);
@@ -330,7 +327,7 @@ async function callAI(
             // 型安全にアクセス
             const candidates = (data as any)?.candidates;
             const aiText = candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-            
+
             if (!aiText) {
                 console.error(`[predictionService] AI returned empty response. Data:`, JSON.stringify(data, null, 2));
                 throw new Error('AI returned empty response');
@@ -365,7 +362,7 @@ function formatRaceData(
     data += '### 出走表（基本情報）\n';
     data += '| 枠番 | 車番 | 選手名 | 都道府県 | 年齢 | 期別 | 級班 | 競走得点 | 脚質 | 勝率 | 2連対率 | 3連対率 | ギア倍率 |\n';
     data += '|------|------|--------|----------|------|------|------|----------|------|------|------|--------|--------|----------|\n';
-    
+
     for (const entry of entries) {
         data += `| ${entry.waku_no} | ${entry.sha_no} | ${entry.player_name} | ${entry.prefecture} | ${entry.age} | ${entry.kinen} | ${entry.class_rank} | ${entry.score} | ${entry.leg_type} | ${entry.win_rate}% | ${entry.second_rate}% | ${entry.third_rate}% | ${entry.gear_ratio} |\n`;
     }
@@ -375,12 +372,12 @@ function formatRaceData(
         data += '\n### 直近成績\n';
         for (const result of recentResults) {
             data += `車番${result.sha_no} (${result.player_name}):\n`;
-            
+
             // 今節成績
             if (result.current_session && result.current_session.races) {
                 data += `  今節成績: ${result.current_session.races.map((r) => `${r.race_name}:${r.rank}`).join(', ')}\n`;
             }
-            
+
             // 直近開催成績
             for (let i = 1; i <= 3; i++) {
                 const recentKey = `recent${i}` as 'recent1' | 'recent2' | 'recent3';
@@ -398,7 +395,7 @@ function formatRaceData(
         for (const match of matchResults) {
             data += `車番${match.sha_no} (${match.player_name}):\n`;
             data += `  総合成績: ${match.total ?? 'データなし'}\n`;
-            
+
             // 個別対戦成績
             if (match.vs_records) {
                 for (const [opponent, record] of Object.entries(match.vs_records)) {
