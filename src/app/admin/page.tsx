@@ -87,7 +87,9 @@ export default function AdminPage() {
         try {
             const body: Record<string, string | undefined> = { workflow: opts.workflow };
             if (opts.step) body.step = opts.step;
-            if (opts.workflow === 'scrape' && opts.targetDate) body.target_date = opts.targetDate;
+            if ((opts.workflow === 'scrape' || opts.workflow === 'prediction') && opts.targetDate) {
+                body.target_date = opts.targetDate;
+            }
 
             const res = await fetch('/api/admin/trigger', {
                 method: 'POST',
@@ -277,7 +279,7 @@ export default function AdminPage() {
                             id="btn-prediction"
                             className={`${styles.btn} ${styles.btnPrimary} ${styles.btnFull}`}
                             disabled={loading}
-                            onClick={() => triggerWorkflow({ workflow: 'scrape', step: 'prediction', targetDate })}
+                            onClick={() => triggerWorkflow({ workflow: 'prediction', targetDate })}
                         >
                             🤖 AI予想実行（対象日付: {targetDate}）
                         </button>
