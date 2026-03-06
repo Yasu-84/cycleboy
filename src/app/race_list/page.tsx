@@ -40,17 +40,17 @@ function getGradeLabel(grade: string): string {
     return map[grade] ?? grade;
 }
 
-function getKaisaiTypeBadge(types: string[] | null): { label: string; className: string }[] {
-    if (!types) return [];
-    const map: Record<string, string> = {
-        'モーニング': 'kaisai-morning',
-        'ナイター': 'kaisai-nighter',
-        'ミッドナイト': 'kaisai-midnight',
-        'ガールズ': 'kaisai-girls',
-    };
-    return types
-        .filter((t) => map[t])
-        .map((t) => ({ label: t, className: map[t] }));
+function getKaisaiTypeBadge(types: string[] | null): { label: string; className: string; icon: string }[] {
+  if (!types) return [];
+  const map: Record<string, { className: string; icon: string }> = {
+    'モーニング': { className: 'kaisai-morning', icon: '🌅' },
+    'ナイター': { className: 'kaisai-nighter', icon: '🌃' },
+    'ミッドナイト': { className: 'kaisai-midnight', icon: '🌑' },
+    'ガールズ': { className: 'kaisai-girls', icon: '👩' },
+  };
+  return types
+    .filter((t) => map[t])
+    .map((t) => ({ label: t, ...map[t] }));
 }
 
 function formatTime(time: string): string {
@@ -180,7 +180,7 @@ export default async function RaceListPage({
                             key={badge.label}
                             className={`kaisai-badge ${badge.className}`}
                         >
-                            {badge.label}
+                            {badge.icon} {badge.label}
                         </span>
                     ))}
                 </div>
