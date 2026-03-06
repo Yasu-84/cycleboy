@@ -12,7 +12,7 @@ const POLL_INTERVAL_MS = 3_000;
 const ADMIN_API_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY ?? '';
 
 type WorkflowType = 'scrape' | 'cleanup' | 'prediction';
-type StepType = 'all' | 'schedule' | 'program' | 'entry';
+type StepType = 'all' | 'schedule' | 'program' | 'entry' | 'prediction';
 
 interface TriggerOptions {
     workflow: WorkflowType;
@@ -277,7 +277,7 @@ export default function AdminPage() {
                             id="btn-prediction"
                             className={`${styles.btn} ${styles.btnPrimary} ${styles.btnFull}`}
                             disabled={loading}
-                            onClick={() => triggerPrediction()}
+                            onClick={() => triggerWorkflow({ workflow: 'scrape', step: 'prediction', targetDate })}
                         >
                             🤖 AI予想実行（対象日付: {targetDate}）
                         </button>
