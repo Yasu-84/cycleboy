@@ -2,13 +2,23 @@
  * スクレイピング共通 HTTP ユーティリティ
  * - Axios + Cheerio でページを取得してパース済み $ を返す
  * - HTTP 4xx/5xx: 指数バックオフで最大3回リトライ
- * - タイムアウト（>10秒）: リトライなし、即時スロー
+ * - タイムアウト（>10秒）: リトライなし、即時エラー
  */
 import axios from 'axios';
 import { load } from 'cheerio';
 import { sleep } from '@/lib/utils/dateUtils';
 
 export type CheerioAPI = ReturnType<typeof load>;
+
+/** fetchPage のエラー情報 */
+export interface FetchError extends Error {
+    type: 'timeout' | 'http';
+    url: string;
+    statusCode?: number;
+    statusText?: string;
+    responseBody?: string;
+    attempt: number;
+}
 
 const BASE_URL = 'https://keirin.netkeiba.com';
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -49,6 +59,7 @@ export async function fetchPage(path: string): Promise<CheerioAPI> {
                 throw Object.assign(new Error(`Timeout fetching ${url}`), {
                     type: 'timeout',
                     url,
+                    attempt,
                 });
             }
 
@@ -59,6 +70,75 @@ export async function fetchPage(path: string): Promise<CheerioAPI> {
                 `[fetchPage] attempt ${attempt + 1} failed for ${url}, retrying in ${delay}ms...`
             );
             await sleep(delay);
+        }
+    }
+
+    throw new Error('unreachable');
+}
+
+/**
+ * エラー情報付きでページを取得する（詳細エラーハンドリング用）
+ * @param path - "/race/schedule/?..." 形式またはフル URL
+ */
+export async function fetchPageWithErrorDetails(path: string): Promise<{ $: CheerioAPI; error?: FetchError }> {
+    const url = path.startsWith('http') ? path : `${BASE_URL}${path}`;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const res = await axios.get<ArrayBuffer>(url, {
+                timeout: DEFAULT_TIMEOUT_MS,
+                headers: HEADERS,
+                responseType: 'arraybuffer',
+            });
+
+            const html = Buffer.from(res.data).toString('utf-8');
+            return { $: load(html) };
+        } catch (err) {
+            const isTimeout =
+                axios.isAxiosError(err) &&
+                (err.code === 'ECONNABORTED' || err.code === 'ERR_CANCELED');
+
+            if (isTimeout) {
+                const timeoutError: FetchError = Object.assign(new Error(`Timeout fetching ${url}`), {
+                    type: 'timeout',
+                    url,
+                    attempt,
+                });
+                return { error: timeoutError };
+            }
+
+            if (axios.isAxiosError(err)) {
+                const axiosError = err;
+                const httpError: FetchError = Object.assign(new Error(`HTTP ${axiosError.response?.status} fetching ${url}`), {
+                    type: 'http',
+                    url,
+                    statusCode: axiosError.response?.status,
+                    statusText: axiosError.response?.statusText,
+                    responseBody: typeof axiosError.response?.data === 'string'
+                        ? axiosError.response.data.substring(0, 500)
+                        : undefined,
+                    attempt,
+                });
+
+                if (attempt === MAX_RETRIES) {
+                    return { error: httpError };
+                }
+
+                const delay = RETRY_DELAYS_MS[attempt] ?? 4_000;
+                console.warn(
+                    `[fetchPage] attempt ${attempt + 1} failed for ${url}, retrying in ${delay}ms...`
+                );
+                await sleep(delay);
+                continue;
+            }
+
+            // Axios以外のエラー
+            const otherError: FetchError = Object.assign(new Error(`Error fetching ${url}: ${err instanceof Error ? err.message : String(err)}`), {
+                type: 'http',
+                url,
+                attempt,
+            });
+            return { error: otherError };
         }
     }
 

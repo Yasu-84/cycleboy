@@ -11,6 +11,12 @@ export interface JobError {
     message: string;
     /** レスポンスコードや対象URL等の詳細 JSONB */
     detail: Record<string, unknown> | null;
+    /** スタックトレース（本番環境ではマスク化） */
+    stack_trace: string | null;
+    /** リトライ回数 */
+    retry_count: number | null;
+    /** 影響範囲（例: race_id, jyo_cd, sha_no） */
+    context: Record<string, unknown> | null;
     occurred_at: string;
 }
 

@@ -53,7 +53,7 @@ interface RecentResultData {
         jyo_name: string;
         races: Array<{
             race_name: string;
-            rank: number | string;
+        rank: number | string;
         }>;
     } | null;
     recent3: {
@@ -130,6 +130,23 @@ export async function run(options: PredictionOptions = {}): Promise<PredictionRe
                 const msg = `[predictionService] race_id=${raceId} failed: ${err instanceof Error ? err.message : err}`;
                 console.error(msg);
                 errors.push(msg);
+
+                // エラー詳細を記録
+                const errorDetail: Record<string, unknown> = {
+                    raceId,
+                    targetDate,
+                    race_no: race.race_no,
+                    race_title: race.race_title,
+                };
+
+                if (err instanceof Error) {
+                    errorDetail.errorMessage = err.message;
+                    errorDetail.errorType = err.name || 'Error';
+                    if (err.stack) {
+                        errorDetail.stackTrace = err.stack.substring(0, 1000);
+                    }
+                }
+
                 // 次のレースへ継続
             }
 
@@ -224,113 +241,113 @@ async function callAI(
     // プロンプトを構築
     const fullPrompt = `${prompt}\n\n## 【対象レースデータ】\n\n${raceData}\n\n## 【出力要求】\n\n上記のデータに基づいて、指定された出力フォーマットに従って予想を出力してください。`;
 
-        // レート制限回避のためのリトライロジック
-        const maxRetries = 3;
-        const baseDelay = 2000; // 2秒
+    // レート制限回避のためのリトライロジック
+    const maxRetries = 3;
+    const baseDelay = 2000; // 2秒
 
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                console.log(`[predictionService] AI API call attempt ${attempt}/${maxRetries} for race_id=${raceId}`);
-                
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        contents: [
-                            {
-                                parts: [
-                                    {
-                                        text: fullPrompt
-                                    }
-                                ]
-                            }
-                        ],
-                        generationConfig: {
-                            temperature: 0.7,
-                            topK: 40,
-                            topP: 0.95,
-                            maxOutputTokens: 8192,
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`[predictionService] AI API call attempt ${attempt}/${maxRetries} for race_id=${raceId}`);
+            
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            parts: [
+                                {
+                                    text: fullPrompt
+                                }
+                            ]
                         }
-                    })
-                });
-
-                // APIキーの問題を検出（401 Unauthorized）
-                if (response.status === 401) {
-                    const errorText = await response.text();
-                    console.error(`[predictionService] API key error (401): ${errorText}`);
-                    throw new Error(`Invalid API key. Please check GEMINI_API_KEY environment variable.`);
-                }
-
-                // レート制限エラー（429）を検出
-                if (response.status === 429) {
-                    const errorText = await response.text();
-                    console.error(`[predictionService] Rate limit hit (429): ${errorText}`);
-                    if (attempt < maxRetries) {
-                        const delay = baseDelay * attempt; // 指数バックオフ
-                        console.log(`[predictionService] Retrying after ${delay}ms...`);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        continue;
+                    ],
+                    generationConfig: {
+                        temperature: 0.7,
+                        topK: 40,
+                        topP: 0.95,
+                        maxOutputTokens: 8192,
                     }
-                    throw new Error(`Rate limit exceeded after ${maxRetries} attempts`);
-                }
+                })
+            });
 
-                // モデルが見つからない（404）
-                if (response.status === 404) {
-                    const errorText = await response.text();
-                    console.error(`[predictionService] Model not found (404): ${errorText}`);
-                    throw new Error(`Model '${model}' not found. Please check GEMINI_MODEL environment variable.`);
-                }
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error(`[predictionService] AI API error ${response.status}: ${errorText}`);
-                    throw new Error(`AI API error ${response.status}: ${errorText}`);
-                }
-
-                let data: unknown;
-                let responseText = '';
-                try {
-                    responseText = await response.text();
-                    console.log(`[predictionService] AI API response status: ${response.status}`);
-                    console.log(`[predictionService] AI API response text (first 500 chars): ${responseText.substring(0, 500)}`);
-                    data = JSON.parse(responseText);
-                } catch (parseError) {
-                    const parseErrorMessage = parseError instanceof Error ? parseError.message : String(parseError);
-                    console.error(`[predictionService] JSON parse error: ${parseErrorMessage}`);
-                    console.error(`[predictionService] Response status: ${response.status}`);
-                    console.error(`[predictionService] Response text (first 1000 chars): ${responseText.substring(0, 1000)}`);
-                    console.error(`[predictionService] Response headers:`, Object.fromEntries(response.headers.entries()));
-                    
-                    // レスポンスがテキストでエラーメッセージを返している場合の処理
-                    if (responseText.includes('error') || responseText.includes('Error') || responseText.includes('An error')) {
-                        throw new Error(`AI API returned error response (status ${response.status}): ${responseText.substring(0, 500)}`);
-                    }
-                    throw new Error(`AI API returned invalid JSON (status ${response.status}): ${responseText.substring(0, 200)}...`);
-                }
-
-                // 型安全にアクセス
-                const candidates = (data as any)?.candidates;
-                const aiText = candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-                
-                if (!aiText) {
-                    console.error(`[predictionService] AI returned empty response. Data:`, JSON.stringify(data, null, 2));
-                    throw new Error('AI returned empty response');
-                }
-
-                return aiText;
-            } catch (err) {
-                if (attempt === maxRetries) {
-                    throw new Error(`Failed to call AI after ${maxRetries} attempts: ${err instanceof Error ? err.message : err}`);
-                }
-                // レート制限以外のエラーの場合は少し待ってリトライ
-                console.log(`[predictionService] Attempt ${attempt} failed, retrying...`);
-                await new Promise(resolve => setTimeout(resolve, baseDelay * attempt));
+            // APIキーの問題を検出（401 Unauthorized）
+            if (response.status === 401) {
+                const errorText = await response.text();
+                console.error(`[predictionService] API key error (401): ${errorText}`);
+                throw new Error(`Invalid API key. Please check GEMINI_API_KEY environment variable.`);
             }
-        }
 
-        throw new Error('Failed to call AI: Maximum retries exceeded');
+            // レート制限エラー（429）を検出
+            if (response.status === 429) {
+                const errorText = await response.text();
+                console.error(`[predictionService] Rate limit hit (429): ${errorText}`);
+                if (attempt < maxRetries) {
+                    const delay = baseDelay * attempt; // 指数バックオフ
+                    console.log(`[predictionService] Retrying after ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+                throw new Error(`Rate limit exceeded after ${maxRetries} attempts`);
+            }
+
+            // モデルが見つからない（404）
+            if (response.status === 404) {
+                const errorText = await response.text();
+                console.error(`[predictionService] Model not found (404): ${errorText}`);
+                throw new Error(`Model '${model}' not found. Please check GEMINI_MODEL environment variable.`);
+            }
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`[predictionService] AI API error ${response.status}: ${errorText}`);
+                throw new Error(`AI API error ${response.status}: ${errorText}`);
+            }
+
+            let data: unknown;
+            let responseText = '';
+            try {
+                responseText = await response.text();
+                console.log(`[predictionService] AI API response status: ${response.status}`);
+                console.log(`[predictionService] AI API response text (first 500 chars): ${responseText.substring(0, 500)}`);
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                const parseErrorMessage = parseError instanceof Error ? parseError.message : String(parseError);
+                console.error(`[predictionService] JSON parse error: ${parseErrorMessage}`);
+                console.error(`[predictionService] Response status: ${response.status}`);
+                console.error(`[predictionService] Response text (first 1000 chars): ${responseText.substring(0, 1000)}`);
+                console.error(`[predictionService] Response headers:`, Object.fromEntries(response.headers.entries()));
+                
+                // レスポンスがテキストでエラーメッセージを返している場合の処理
+                if (responseText.includes('error') || responseText.includes('Error') || responseText.includes('An error')) {
+                    throw new Error(`AI API returned error response (status ${response.status}): ${responseText.substring(0, 500)}`);
+                }
+                throw new Error(`AI API returned invalid JSON (status ${response.status}): ${responseText.substring(0, 200)}...`);
+            }
+
+            // 型安全にアクセス
+            const candidates = (data as any)?.candidates;
+            const aiText = candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+            
+            if (!aiText) {
+                console.error(`[predictionService] AI returned empty response. Data:`, JSON.stringify(data, null, 2));
+                throw new Error('AI returned empty response');
+            }
+
+            return aiText;
+        } catch (err) {
+            if (attempt === maxRetries) {
+                throw new Error(`Failed to call AI after ${maxRetries} attempts: ${err instanceof Error ? err.message : err}`);
+            }
+            // レート制限以外のエラーの場合は少し待ってリトライ
+            console.log(`[predictionService] Attempt ${attempt} failed, retrying...`);
+            await new Promise(resolve => setTimeout(resolve, baseDelay * attempt));
+        }
+    }
+
+    throw new Error('Failed to call AI: Maximum retries exceeded');
 }
 
 /**
@@ -347,7 +364,7 @@ function formatRaceData(
     // 出走表（基本情報）
     data += '### 出走表（基本情報）\n';
     data += '| 枠番 | 車番 | 選手名 | 都道府県 | 年齢 | 期別 | 級班 | 競走得点 | 脚質 | 勝率 | 2連対率 | 3連対率 | ギア倍率 |\n';
-    data += '|------|------|--------|----------|------|------|------|----------|------|------|--------|--------|----------|\n';
+    data += '|------|------|--------|----------|------|------|------|----------|------|------|------|--------|--------|----------|\n';
     
     for (const entry of entries) {
         data += `| ${entry.waku_no} | ${entry.sha_no} | ${entry.player_name} | ${entry.prefecture} | ${entry.age} | ${entry.kinen} | ${entry.class_rank} | ${entry.score} | ${entry.leg_type} | ${entry.win_rate}% | ${entry.second_rate}% | ${entry.third_rate}% | ${entry.gear_ratio} |\n`;

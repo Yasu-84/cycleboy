@@ -23,6 +23,7 @@ import { scrapeProgramByJyo, scrapeKaisaiTypeMap } from '@/lib/scrapers/raceProg
 import { scrapeEntry } from '@/lib/scrapers/raceEntryScraper';
 import { scrapeRecentResults } from '@/lib/scrapers/raceRecentResultScraper';
 import { scrapeMatchResults } from '@/lib/scrapers/raceMatchResultScraper';
+import { fetchPageWithErrorDetails, type FetchError } from '@/lib/scrapers/fetchUtils';
 import { run as runPrediction } from '@/lib/services/predictionService';
 import type { JobStep, TriggerSource } from '@/types/jobRun';
 
@@ -162,13 +163,35 @@ async function runScheduleStep(
     } catch (err) {
         const msg = `[STEP 1] failed: ${err instanceof Error ? err.message : err}`;
         console.error(msg);
+
+        const errorDetail: Record<string, unknown> = {
+            year,
+            month,
+            targetDate,
+        };
+
+        // FetchError の場合、詳細情報を追加
+        if (err instanceof Error && 'type' in err) {
+            const fetchError = err as FetchError;
+            errorDetail.errorType = fetchError.type;
+            errorDetail.url = fetchError.url;
+            errorDetail.statusCode = fetchError.statusCode;
+            errorDetail.attempt = fetchError.attempt;
+            if (fetchError.responseBody) {
+                errorDetail.responseBody = fetchError.responseBody.substring(0, 500);
+            }
+        }
+
         errors.push(msg);
         await jobRunRepo.recordJobError({
             job_run_id: jobRunId,
             step: 'schedule',
             error_type: 'http',
             message: msg,
-            detail: null,
+            detail: errorDetail,
+            stack_trace: err instanceof Error ? err.stack || null : null,
+            retry_count: null,
+            context: { year, month, targetDate },
         });
         return false;
     }
@@ -237,13 +260,36 @@ async function runProgramStep(
         } catch (err) {
             const msg = `[STEP 3] jyo_cd=${jyo_cd} failed: ${err instanceof Error ? err.message : err}`;
             console.error(msg);
+
+            const errorDetail: Record<string, unknown> = {
+                jyo_cd,
+                year,
+                month,
+                targetDate,
+            };
+
+            // FetchError の場合、詳細情報を追加
+            if (err instanceof Error && 'type' in err) {
+                const fetchError = err as FetchError;
+                errorDetail.errorType = fetchError.type;
+                errorDetail.url = fetchError.url;
+                errorDetail.statusCode = fetchError.statusCode;
+                errorDetail.attempt = fetchError.attempt;
+                if (fetchError.responseBody) {
+                    errorDetail.responseBody = fetchError.responseBody.substring(0, 500);
+                }
+            }
+
             errors.push(msg);
             await jobRunRepo.recordJobError({
                 job_run_id: jobRunId,
                 step: `program:${jyo_cd}`,
                 error_type: 'http',
                 message: msg,
-                detail: null,
+                detail: errorDetail,
+                stack_trace: err instanceof Error ? err.stack || null : null,
+                retry_count: null,
+                context: { jyo_cd, year, month, targetDate },
             });
             // 1競輪場の失敗は他の競輪場の処理を継続
         }
@@ -298,13 +344,37 @@ async function runEntryStep(
                 entryErrorCount++;
                 const msg = `[STEP 5] race_id=${raceId} failed: ${err instanceof Error ? err.message : err}`;
                 console.error(msg);
+
+                const errorDetail: Record<string, unknown> = {
+                    raceId,
+                    jyo_cd,
+                    targetDate,
+                    race_no: race.race_no,
+                    race_title: race.race_title,
+                };
+
+                // FetchError の場合、詳細情報を追加
+                if (err instanceof Error && 'type' in err) {
+                    const fetchError = err as FetchError;
+                    errorDetail.errorType = fetchError.type;
+                    errorDetail.url = fetchError.url;
+                    errorDetail.statusCode = fetchError.statusCode;
+                    errorDetail.attempt = fetchError.attempt;
+                    if (fetchError.responseBody) {
+                        errorDetail.responseBody = fetchError.responseBody.substring(0, 500);
+                    }
+                }
+
                 errors.push(msg);
                 await jobRunRepo.recordJobError({
                     job_run_id: jobRunId,
                     step: `entry:${raceId}`,
                     error_type: 'http',
                     message: msg,
-                    detail: { raceId },
+                    detail: errorDetail,
+                    stack_trace: err instanceof Error ? err.stack || null : null,
+                    retry_count: null,
+                    context: { raceId, jyo_cd, targetDate, race_no: race.race_no, race_title: race.race_title },
                 });
                 // 次のレースへ継続
             }
@@ -346,6 +416,9 @@ async function runPredictionStep(
                 error_type: 'prediction',
                 message: error,
                 detail: null,
+                stack_trace: null,
+                retry_count: null,
+                context: { targetDate },
             });
         }
     } catch (err) {
@@ -361,6 +434,9 @@ async function runPredictionStep(
             error_type: 'prediction',
             message: msg,
             detail: null,
+            stack_trace: err instanceof Error ? err.stack || null : null,
+            retry_count: null,
+            context: { targetDate },
         });
     }
 }
