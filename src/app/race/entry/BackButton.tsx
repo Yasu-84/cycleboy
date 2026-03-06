@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import styles from './entry.module.css';
 
-export default function BackButton({ className }: { className?: string } = {}) {
+export default function BackButton({ className = '' }: { className?: string }) {
     const router = useRouter();
     return (
         <button
