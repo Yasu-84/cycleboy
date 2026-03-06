@@ -222,6 +222,9 @@ export default async function RaceListPage({
                     ))}
                 </div>
             )}
+
+            {/* 下部戻るボタン */}
+            <Link href="/" className={`${styles.backLink} ${styles.backLinkBottom}`}>← 戻る</Link>
         </div>
     );
 }

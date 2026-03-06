@@ -181,6 +181,9 @@ export default async function EntryPage({
                 recentResults={recentResults}
                 matchResults={matchResults}
             />
+
+            {/* 下部戻るボタン */}
+            <BackButton className={styles.backLinkBottom} />
         </div>
     );
 }

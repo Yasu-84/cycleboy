@@ -139,17 +139,20 @@ a {
    開催区分バッジ (設計書3.5)
    ================================================================ */
 .kaisai-badge {
-  display: inline-block;
-  padding: 2px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
   border-radius: var(--radius-sm);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.2;
   white-space: nowrap;
 }
 .kaisai-morning   { background-color: var(--kaisai-morning); color: #333; }
 .kaisai-nighter   { background-color: var(--kaisai-nighter); color: #FFF; }
 .kaisai-midnight  { background-color: var(--kaisai-midnight); color: #FFF; }
+.kaisai-girls     { background-color: var(--kaisai-girls); color: #333; }
 .kaisai-girls     { background-color: var(--kaisai-girls); color: #333; }
 
 /* ================================================================

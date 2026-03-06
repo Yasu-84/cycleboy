@@ -80,10 +80,14 @@ export async function fetchPage(path: string): Promise<CheerioAPI> {
  * エラー情報付きでページを取得する（詳細エラーハンドリング用）
  * @param path - "/race/schedule/?..." 形式またはフル URL
  */
-export async function fetchPageWithErrorDetails(path: string): Promise<{ $: CheerioAPI; error?: FetchError }> {
+export async function fetchPageWithErrorDetails(path: string): Promise<
+    { $: CheerioAPI; error?: FetchError } |
+    { $?: CheerioAPI; error: FetchError }
+> {
     const url = path.startsWith('http') ? path : `${BASE_URL}${path}`;
+    let attempt = 0;
 
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    while (true) {
         try {
             const res = await axios.get<ArrayBuffer>(url, {
                 timeout: DEFAULT_TIMEOUT_MS,
@@ -99,18 +103,18 @@ export async function fetchPageWithErrorDetails(path: string): Promise<{ $: Chee
                 (err.code === 'ECONNABORTED' || err.code === 'ERR_CANCELED');
 
             if (isTimeout) {
-                const timeoutError: FetchError = Object.assign(new Error(`Timeout fetching ${url}`), {
-                    type: 'timeout',
+                const timeoutError = Object.assign(new Error(`Timeout fetching ${url}`), {
+                    type: 'timeout' as const,
                     url,
                     attempt,
-                });
-                return { error: timeoutError };
+                }) as FetchError;
+                return { $: undefined, error: timeoutError };
             }
 
             if (axios.isAxiosError(err)) {
                 const axiosError = err;
-                const httpError: FetchError = Object.assign(new Error(`HTTP ${axiosError.response?.status} fetching ${url}`), {
-                    type: 'http',
+                const httpError = Object.assign(new Error(`HTTP ${axiosError.response?.status} fetching ${url}`), {
+                    type: 'http' as const,
                     url,
                     statusCode: axiosError.response?.status,
                     statusText: axiosError.response?.statusText,
@@ -118,10 +122,10 @@ export async function fetchPageWithErrorDetails(path: string): Promise<{ $: Chee
                         ? axiosError.response.data.substring(0, 500)
                         : undefined,
                     attempt,
-                });
+                }) as FetchError;
 
                 if (attempt === MAX_RETRIES) {
-                    return { error: httpError };
+                    return { $: undefined, error: httpError };
                 }
 
                 const delay = RETRY_DELAYS_MS[attempt] ?? 4_000;
@@ -129,20 +133,19 @@ export async function fetchPageWithErrorDetails(path: string): Promise<{ $: Chee
                     `[fetchPage] attempt ${attempt + 1} failed for ${url}, retrying in ${delay}ms...`
                 );
                 await sleep(delay);
+                attempt++;
                 continue;
             }
 
             // Axios以外のエラー
-            const otherError: FetchError = Object.assign(new Error(`Error fetching ${url}: ${err instanceof Error ? err.message : String(err)}`), {
-                type: 'http',
+            const otherError = Object.assign(new Error(`Error fetching ${url}: ${err instanceof Error ? err.message : String(err)}`), {
+                type: 'http' as const,
                 url,
                 attempt,
-            });
-            return { error: otherError };
+            }) as FetchError;
+            return { $: undefined, error: otherError };
         }
     }
-
-    throw new Error('unreachable');
 }
 
 /**

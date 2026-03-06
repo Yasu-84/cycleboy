@@ -75,6 +75,9 @@ export async function run(options: CleanupOptions = {}): Promise<CleanupResult> 
             error_type: 'db',
             message,
             detail: null,
+            stack_trace: err instanceof Error ? (err.stack ?? null) : null,
+            retry_count: null,
+            context: null,
         });
         await jobRunRepo.finishJobRun(jobRunId, 'failed', { deleted, error: message });
         return { success: false, jobRunId, deleted };
