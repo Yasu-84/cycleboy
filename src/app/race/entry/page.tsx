@@ -153,7 +153,9 @@ export default async function EntryPage({
 
     return (
         <div className="container">
-            <BackButton />
+            <div className={styles.topNav}>
+                <BackButton />
+            </div>
 
 
             {/* レースヘッダー */}
@@ -183,7 +185,9 @@ export default async function EntryPage({
             />
 
             {/* 下部戻るボタン */}
-            <BackButton className={styles.backLinkBottom} />
+            <div className={styles.topNav}>
+                <BackButton className={styles.backLinkBottom} />
+            </div>
         </div>
     );
 }
