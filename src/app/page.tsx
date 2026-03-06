@@ -61,14 +61,17 @@ function getKaisaiTypeBadge(types: string[] | null): { label: string; className:
 }
 
 function formatDateJa(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00+09:00');
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const d = new Date(year, month - 1, day);
   const days = ['日', '月', '火', '水', '木', '金', '土'];
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`;
 }
 
 function formatPeriod(start: string, end: string): string {
-  const s = new Date(start + 'T00:00:00+09:00');
-  const e = new Date(end + 'T00:00:00+09:00');
+  const [sYear, sMonth, sDay] = start.split('-').map(Number);
+  const [eYear, eMonth, eDay] = end.split('-').map(Number);
+  const s = new Date(sYear, sMonth - 1, sDay);
+  const e = new Date(eYear, eMonth - 1, eDay);
   return `${s.getMonth() + 1}/${s.getDate()}〜${e.getMonth() + 1}/${e.getDate()}`;
 }
 
