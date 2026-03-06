@@ -304,7 +304,6 @@ export default function AdminPage() {
                         <table className={styles.jobTable}>
                             <thead>
                                 <tr>
-                                    <th>種別</th>
                                     <th>ステップ</th>
                                     <th>ステータス</th>
                                     <th>起動元</th>
@@ -315,8 +314,6 @@ export default function AdminPage() {
                             <tbody>
                                 {jobRuns.map((run) => (
                                     <tr key={run.id}>
-                                        <td>{formatJobType(run.job_type)}</td>
-                                        <td>{run.step ?? '—'}</td>
                                         <td>
                                             <span className={`${styles.badge} ${getBadgeClass(run.status, styles)}`}>
                                                 {run.status}
