@@ -13,7 +13,7 @@
 import * as scrapeService from '../src/lib/services/scrapeService';
 import type { JobStep } from '../src/types/jobRun';
 
-const VALID_STEPS: JobStep[] = ['all', 'schedule', 'program', 'entry'];
+const VALID_STEPS: JobStep[] = ['all', 'schedule', 'program', 'entry', 'prediction'];
 
 const rawStep = process.argv[2] ?? 'all';
 const targetDate = process.argv[3] ?? undefined;
