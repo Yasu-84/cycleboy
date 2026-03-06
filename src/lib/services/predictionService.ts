@@ -151,7 +151,7 @@ export async function run(options: PredictionOptions = {}): Promise<PredictionRe
             // APIレート制限回避のため、各レース処理後にディレイを追加
             const remainingRaces = todayRaces.length - (successCount + errorCount);
             if (remainingRaces > 0) {
-                const delay = 3000; // 3秒
+                const delay = 60 * 1000; // 1分
                 console.log(`[predictionService] Waiting ${delay}ms before next race...`);
                 await new Promise(resolve => setTimeout(resolve, delay));
             }
