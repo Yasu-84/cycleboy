@@ -52,3 +52,4 @@ jobs:
           SCRAPE_DELAY_MS: ${{ secrets.SCRAPE_DELAY_MS || '500' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL || 'gemini-1.5-flash' }}
+          GEM_SYSTEM_PROMPT: ${{ secrets.GEM_SYSTEM_PROMPT }}

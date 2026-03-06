@@ -204,7 +204,8 @@ async function generatePrediction(raceId: string): Promise<RacePredictionInput> 
 function loadPrompt(): string {
     const prompt = process.env.GEM_SYSTEM_PROMPT;
     if (!prompt) {
-        throw new Error('GEM_SYSTEM_PROMPT is not set. Please check your environment variables.');
+        console.warn('[predictionService] GEM_SYSTEM_PROMPT is not set. Using default minimal prompt.');
+        return '競輪の予想を行ってください。出走表データと直近成績を元に、3連単の買い目と展開予想を日本語で簡潔に提供してください。';
     }
     return prompt;
 }
