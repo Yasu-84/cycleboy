@@ -226,8 +226,9 @@ async function callAI(
     // APIキーを環境変数から取得
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-        console.error('[predictionService] GEMINI_API_KEY is not set in environment variables');
-        throw new Error('GEMINI_API_KEY is not set. Please check your environment variables.');
+        const errorMsg = 'GEMINI_API_KEY is not set. Please add it to your GitHub Repository Secrets (Settings > Secrets and variables > Actions).';
+        console.error(`[predictionService] ${errorMsg}`);
+        throw new Error(errorMsg);
     }
 
     console.log(`[predictionService] Using model: ${model}`);
