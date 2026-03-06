@@ -1,10 +1,12 @@
 'use client';
 
 import type { RaceEntry } from '@/types/raceEntry';
+import type { RacePrediction } from '@/types/racePrediction';
 import styles from './entry.module.css';
 
 interface FormationTabProps {
     entries: RaceEntry[];
+    prediction?: RacePrediction | null;
 }
 
 function getWakuClass(wakuNo: number): string {
@@ -24,7 +26,7 @@ function getPositionLabel(index: number): string {
     return `${index + 1}番手`;
 }
 
-export default function FormationTab({ entries }: FormationTabProps) {
+export default function FormationTab({ entries, prediction }: FormationTabProps) {
     // formation_prediction は全選手共通なので1件目から取得
     const formation = entries[0]?.formation_prediction;
 
@@ -63,6 +65,18 @@ export default function FormationTab({ entries }: FormationTabProps) {
                     </div>
                 </div>
             ))}
+
+            {/* セクション3（ライン別評価）の表示エリア */}
+            {prediction && prediction.section3_line_evaluation && (
+                <div className={styles.predictionSection} style={{ marginTop: '2rem' }}>
+                    <h3 className={styles.predictionTitle}>ライン別評価（各ラインの勝機と懸念点）</h3>
+                    <div className={styles.predictionBox}>
+                        <p className={styles.predictionText} style={{ whiteSpace: 'pre-wrap' }}>
+                            {prediction.section3_line_evaluation}
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

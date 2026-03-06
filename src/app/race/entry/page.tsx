@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase/client';
 import type { RaceEntry } from '@/types/raceEntry';
 import type { RaceRecentResult } from '@/types/raceRecentResult';
 import type { RaceMatchResult } from '@/types/raceMatchResult';
+import type { RacePrediction } from '@/types/racePrediction';
 import EntryTabs from './EntryTabs';
 import BackButton from './BackButton';
 import styles from './entry.module.css';
@@ -115,6 +116,20 @@ async function getMatchResults(raceId: string): Promise<RaceMatchResult[]> {
     return (data as RaceMatchResult[]) ?? [];
 }
 
+async function getRacePrediction(raceId: string): Promise<RacePrediction | null> {
+    const { data, error } = await supabase
+        .from('race_predictions')
+        .select('*')
+        .eq('netkeiba_race_id', raceId)
+        .maybeSingle();
+
+    if (error) {
+        console.error(`[getRacePrediction] ${error.message}`);
+        return null;
+    }
+    return (data as RacePrediction) ?? null;
+}
+
 // ------------------------------------------------------------------
 // Page Component
 // ------------------------------------------------------------------
@@ -136,11 +151,12 @@ export default async function EntryPage({
         );
     }
 
-    const [raceInfo, entries, recentResults, matchResults] = await Promise.all([
+    const [raceInfo, entries, recentResults, matchResults, prediction] = await Promise.all([
         getRaceInfo(raceId),
         getEntries(raceId),
         getRecentResults(raceId),
         getMatchResults(raceId),
+        getRacePrediction(raceId),
     ]);
 
     if (!raceInfo) {
@@ -182,6 +198,7 @@ export default async function EntryPage({
                 entries={entries}
                 recentResults={recentResults}
                 matchResults={matchResults}
+                prediction={prediction}
             />
 
             {/* 下部戻るボタン */}
