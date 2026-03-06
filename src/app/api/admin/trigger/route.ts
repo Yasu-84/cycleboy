@@ -112,6 +112,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (workflow === 'scrape') {
         inputs.step = step ?? 'all';
         if (target_date) inputs.target_date = target_date;
+    } else if (workflow === 'cleanup') {
+        // cleanup は inputs なし
     } else if (workflow === 'prediction') {
         if (target_date) inputs.target_date = target_date;
     }

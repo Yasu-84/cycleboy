@@ -1,0 +1,41 @@
+name: Run AI Prediction
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: '対象日付 (YYYY-MM-DD, 省略時は JST 当日)'
+        required: false
+        type: string
+
+# 同名グループの二重実行を防止
+concurrency:
+  group: prediction
+  cancel-in-progress: false
+
+jobs:
+  prediction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run prediction
+        run: npx tsx scripts/scrape.ts prediction "${{ inputs.target_date || '' }}"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ secrets.GEMINI_MODEL || 'gemini-1.5-flash' }}
+          GEM_SYSTEM_PROMPT: ${{ secrets.GEM_SYSTEM_PROMPT }}
