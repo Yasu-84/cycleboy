@@ -281,7 +281,10 @@ export default function AdminPage() {
                         >
                             🤖 AI予想実行（対象日付: {targetDate}）
                         </button>
-                </div>
+                    </div>
+                    <p style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#888' }}>
+                        ※ AI予想は対象日付の出走表データが必要です。先にスクレイピングを実行してください。
+                    </p>
                 </div>
 
                 {/* === ジョブ履歴セクション === */}
@@ -314,6 +317,7 @@ export default function AdminPage() {
                             <tbody>
                                 {jobRuns.map((run) => (
                                     <tr key={run.id}>
+                                        <td>{run.step || '—'}</td>
                                         <td>
                                             <span className={`${styles.badge} ${getBadgeClass(run.status, styles)}`}>
                                                 {run.status}
