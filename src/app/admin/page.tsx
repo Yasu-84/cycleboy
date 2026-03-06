@@ -281,13 +281,7 @@ export default function AdminPage() {
                         >
                             🤖 AI予想実行（対象日付: {targetDate}）
                         </button>
-                    </div>
-                    <p className={styles.dateLabel}>
-                        ※ AI予想は対象日付の出走表データが必要です。先にスクレイピングを実行してください。
-                    </p>
-                    <p className={styles.dateLabel} style={{ marginTop: '8px', fontSize: '0.85rem', color: '#666' }}>
-                        ※ AI予想は対象日付の出走表データが必要です。先にスクレイピングを実行してください。
-                    </p>
+                </div>
                 </div>
 
                 {/* === ジョブ履歴セクション === */}
