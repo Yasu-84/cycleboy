@@ -122,6 +122,17 @@
     box-shadow: var(--shadow-card);
 }
 
+.tableWrapperNoScroll {
+    border-radius: var(--radius-md);
+    background: var(--color-bg-card);
+    box-shadow: var(--shadow-card);
+}
+
+.tableScroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .entryTable,
 .matchTable {
     width: 100%;
