@@ -446,19 +446,19 @@ function parseSections(aiResponse: string): Record<string, string> {
     };
 
     // セクション1: 自信度
-    const section1Match = aiResponse.match(/セクション1[:：]\s*自信度[\s\S]*?(?=セクション2|$)/i);
+    const section1Match = aiResponse.match(/セクション1.*?自信度[\s\S]*?(?=セクション2|$)/i);
     if (section1Match) {
         sections.section1 = section1Match[0].trim();
     }
 
     // セクション2: 展開予想
-    const section2Match = aiResponse.match(/セクション2[:：]\s*展開予想[\s\S]*?(?=セクション3|$)/i);
+    const section2Match = aiResponse.match(/セクション2.*?展開予想[\s\S]*?(?=セクション3|$)/i);
     if (section2Match) {
         sections.section2 = section2Match[0].trim();
     }
 
     // セクション3: ライン別評価
-    const section3Match = aiResponse.match(/セクション3[:：]\s*ライン別評価[\s\S]*?(?=セクション4|$)/i);
+    const section3Match = aiResponse.match(/セクション3.*?ライン別評価[\s\S]*?(?=セクション4|$)/i);
     if (section3Match) {
         sections.section3 = section3Match[0].trim();
     }
@@ -476,7 +476,7 @@ function parseSections(aiResponse: string): Record<string, string> {
     }
 
     // セクション6: 推奨買い目
-    const section6Match = aiResponse.match(/セクション6[:：]\s*推奨買い目[\s\S]*?(?=セクション7|$)/i);
+    const section6Match = aiResponse.match(/セクション6.*?推奨買い目[\s\S]*?(?=セクション7|$)/i);
     if (section6Match) {
         sections.section6 = section6Match[0].trim();
     }

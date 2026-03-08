@@ -47,9 +47,9 @@ export interface ScrapeResult {
 // ----------------------------------------------------------------
 
 export async function run(options: ScrapeOptions = {}): Promise<ScrapeResult> {
-    const step: JobStep = options.step ?? 'all';
-    const targetDate = options.targetDate ?? getJstToday();
-    const triggerSource = options.triggerSource ?? 'cron';
+    const step: JobStep = options.step || 'all';
+    const targetDate = options.targetDate || getJstToday();
+    const triggerSource = options.triggerSource || 'cron';
 
     console.log(`[scrapeService] start  step=${step}  target_date=${targetDate}`);
 
@@ -396,7 +396,7 @@ async function runPredictionStep(
     try {
         console.log(`[STEP 6] Starting prediction for targetDate=${targetDate}`);
         const predictionResult = await runPrediction({ targetDate });
-        
+
         if (predictionResult.summary.skipped) {
             console.log('[STEP 6] prediction skipped (no races found).');
             summary.predictionSkipped = true;

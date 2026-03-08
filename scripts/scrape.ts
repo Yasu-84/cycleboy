@@ -15,8 +15,8 @@ import type { JobStep } from '../src/types/jobRun';
 
 const VALID_STEPS: JobStep[] = ['all', 'schedule', 'program', 'entry', 'prediction'];
 
-const rawStep = process.argv[2] ?? 'all';
-const targetDate = process.argv[3] ?? undefined;
+const rawStep = process.argv[2] || 'all';
+const targetDate = process.argv[3] || undefined;
 
 // 引数バリデーション
 if (!VALID_STEPS.includes(rawStep as JobStep)) {
