@@ -36,7 +36,7 @@ export interface CleanupResult {
 }
 
 export async function run(options: CleanupOptions = {}): Promise<CleanupResult> {
-    // 閾値 = JST 今日 - 7 日（以前のものを削除）
+    // 閾値 = JST 今日 - 31 日（以前のものを削除）
     const threshold = getJstDateMinusDays(RETAIN_DAYS);
     // TIMESTAMPTZ 比較のために ISO 文字列に変換（当日 00:00:00 JST → UTC に変換）
     const thresholdUtc = new Date(`${threshold}T00:00:00+09:00`).toISOString();

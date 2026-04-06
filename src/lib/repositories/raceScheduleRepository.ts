@@ -78,12 +78,39 @@ export async function findScheduleByJyoAndDate(
  * @returns 削除件数
  */
 export async function deleteOlderThan(threshold: string): Promise<number> {
-    const { data, error } = await supabase
+    // まず削除候補の race_schedules を取得
+    const { data: candidates, error: candidateError } = await supabase
         .from(TABLE)
-        .delete()
         .lt('created_at', threshold)
         .select('id');
 
-    if (error) throw new Error(`[raceScheduleRepository.deleteOlderThan] ${error.message}`);
-    return data?.length ?? 0;
+    if (candidateError) {
+        throw new Error(`[raceScheduleRepository.deleteOlderThan] ${candidateError.message}`);
+    }
+
+    const candidateIds = (candidates ?? []).map((row) => row.id);
+    if (candidateIds.length === 0) return 0;
+
+    // programs に参照されている race_schedule_id は除外（FK違反回避）
+    const { data: referencedRows, error: referencedError } = await supabase
+        .from('programs')
+        .select('race_schedule_id')
+        .in('race_schedule_id', candidateIds);
+
+    if (referencedError) {
+        throw new Error(`[raceScheduleRepository.deleteOlderThan] ${referencedError.message}`);
+    }
+
+    const referencedIds = new Set((referencedRows ?? []).map((row) => row.race_schedule_id));
+    const deletableIds = candidateIds.filter((id) => !referencedIds.has(id));
+    if (deletableIds.length === 0) return 0;
+
+    const { data: deletedRows, error: deleteError } = await supabase
+        .from(TABLE)
+        .delete()
+        .in('id', deletableIds)
+        .select('id');
+
+    if (deleteError) throw new Error(`[raceScheduleRepository.deleteOlderThan] ${deleteError.message}`);
+    return deletedRows?.length ?? 0;
 }
