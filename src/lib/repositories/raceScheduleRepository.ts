@@ -81,8 +81,8 @@ export async function deleteOlderThan(threshold: string): Promise<number> {
     // まず削除候補の race_schedules を取得
     const { data: candidates, error: candidateError } = await supabase
         .from(TABLE)
-        .lt('created_at', threshold)
-        .select('id');
+        .select('id')
+        .lt('created_at', threshold);
 
     if (candidateError) {
         throw new Error(`[raceScheduleRepository.deleteOlderThan] ${candidateError.message}`);
