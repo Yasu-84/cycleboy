@@ -6,7 +6,7 @@
  * 使い方:
  *   npx tsx scripts/cleanup.ts
  */
-import * as cleanupService from '@/lib/services/cleanupService';
+import * as cleanupService from '../src/lib/services/cleanupService';
 
 console.log('[cleanup] start');
 

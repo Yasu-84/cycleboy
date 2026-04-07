@@ -10,8 +10,8 @@
  *   step        : all | schedule | program | entry (省略時: all)
  *   target_date : YYYY-MM-DD 形式 (省略時: JST 当日)
  */
-import * as scrapeService from '@/lib/services/scrapeService';
-import type { JobStep } from '@/types/jobRun';
+import * as scrapeService from '../src/lib/services/scrapeService';
+import type { JobStep } from '../src/types/jobRun';
 
 const VALID_STEPS: JobStep[] = ['all', 'schedule', 'program', 'entry', 'prediction'];
 
