@@ -9,6 +9,10 @@ interface ResultTabProps {
     refunds: RaceRefund[];
 }
 
+function getWakuClass(shaNo: number): string {
+    return `waku-${shaNo}`;
+}
+
 function getRankClass(rank: number): string {
     if (rank === 1) return styles.rank1;
     if (rank === 2) return styles.rank2;
@@ -56,7 +60,7 @@ export default function ResultTab({ results, refunds }: ResultTabProps) {
                                         </span>
                                     </td>
                                     <td className={styles.colNarrow}>
-                                        <span className={`${styles.wakuBadge} ${styles.shaBadge}`}>
+                                        <span className={`${styles.wakuBadge} ${getWakuClass(r.sha_no)}`}>
                                             {r.sha_no}
                                         </span>
                                     </td>
