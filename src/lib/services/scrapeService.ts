@@ -17,12 +17,15 @@ import * as raceRepo from '@/lib/repositories/raceRepository';
 import * as raceEntryRepo from '@/lib/repositories/raceEntryRepository';
 import * as raceRecentResultRepo from '@/lib/repositories/raceRecentResultRepository';
 import * as raceMatchResultRepo from '@/lib/repositories/raceMatchResultRepository';
+import * as raceResultRepo from '@/lib/repositories/raceResultRepository';
+import * as raceRefundRepo from '@/lib/repositories/raceRefundRepository';
 import * as jobRunRepo from '@/lib/repositories/jobRunRepository';
 import { scrapeGradeSchedules } from '@/lib/scrapers/raceScheduleScraper';
 import { scrapeProgramByJyo, scrapeKaisaiTypeMap } from '@/lib/scrapers/raceProgramScraper';
 import { scrapeEntry } from '@/lib/scrapers/raceEntryScraper';
 import { scrapeRecentResults } from '@/lib/scrapers/raceRecentResultScraper';
 import { scrapeMatchResults } from '@/lib/scrapers/raceMatchResultScraper';
+import { scrapeResult } from '@/lib/scrapers/raceResultScraper';
 import { fetchPageWithErrorDetails, type FetchError } from '@/lib/scrapers/fetchUtils';
 import { run as runPrediction } from '@/lib/services/predictionService';
 import type { JobStep, TriggerSource } from '@/types/jobRun';
@@ -66,7 +69,7 @@ export async function run(options: ScrapeOptions = {}): Promise<ScrapeResult> {
     }
 
     const jobRunId = await jobRunRepo.startJobRun({
-        job_type: step === 'cleanup' ? 'cron_cleanup' : 'cron_scrape',
+        job_type: step === 'cleanup' ? 'cron_cleanup' : step === 'result' ? 'cron_result' : 'cron_scrape',
         step,
         trigger_source: triggerSource,
         trigger_by: options.triggerBy,
@@ -87,6 +90,8 @@ export async function run(options: ScrapeOptions = {}): Promise<ScrapeResult> {
             await runEntryStep(targetDate, jobRunId, errors, summary);
         } else if (step === 'prediction') {
             await runPredictionStep(targetDate, jobRunId, errors, summary);
+        } else if (step === 'result') {
+            await runResultStep(targetDate, jobRunId, errors, summary);
         } else if (step === 'cleanup') {
             // cleanup は cleanupService で処理
             throw new Error('Use cleanupService for cleanup step.');
@@ -441,6 +446,81 @@ async function runPredictionStep(
     }
 }
 
+/** STEP 7: レース結果・払戻金スクレイピング */
+async function runResultStep(
+    targetDate: string,
+    jobRunId: string,
+    errors: string[],
+    summary: Record<string, unknown>
+): Promise<void> {
+    const todayRaces = await raceRepo.getRacesByDate(targetDate);
+    if (todayRaces.length === 0) {
+        console.log('[STEP 7] no races found for today.');
+        return;
+    }
+
+    let resultSuccessCount = 0;
+    let resultErrorCount = 0;
+
+    for (const race of todayRaces) {
+        const raceId = race.netkeiba_race_id;
+
+        try {
+            const { results, refunds } = await scrapeResult(raceId);
+
+            if (results.length === 0) {
+                console.log(`[STEP 7] race_id=${raceId}: no results yet, skipping.`);
+                continue;
+            }
+
+            await Promise.all([
+                raceResultRepo.upsertRaceResults(results),
+                raceRefundRepo.upsertRaceRefunds(refunds),
+            ]);
+
+            resultSuccessCount++;
+        } catch (err) {
+            resultErrorCount++;
+            const msg = `[STEP 7] race_id=${raceId} failed: ${err instanceof Error ? err.message : err}`;
+            console.error(msg);
+
+            const errorDetail: Record<string, unknown> = {
+                raceId,
+                targetDate,
+                race_no: race.race_no,
+                race_title: race.race_title,
+            };
+
+            if (err instanceof Error && 'type' in err) {
+                const fetchError = err as FetchError;
+                errorDetail.errorType = fetchError.type;
+                errorDetail.url = fetchError.url;
+                errorDetail.statusCode = fetchError.statusCode;
+                errorDetail.attempt = fetchError.attempt;
+                if (fetchError.responseBody) {
+                    errorDetail.responseBody = fetchError.responseBody.substring(0, 500);
+                }
+            }
+
+            errors.push(msg);
+            await jobRunRepo.recordJobError({
+                job_run_id: jobRunId,
+                step: `result:${raceId}`,
+                error_type: 'http',
+                message: msg,
+                detail: errorDetail,
+                stack_trace: err instanceof Error ? err.stack || null : null,
+                retry_count: null,
+                context: { raceId, targetDate, race_no: race.race_no, race_title: race.race_title },
+            });
+        }
+    }
+
+    summary.resultSuccess = resultSuccessCount;
+    summary.resultError = resultErrorCount;
+    console.log(`[STEP 7] done  success=${resultSuccessCount}  error=${resultErrorCount}`);
+}
+
 // ----------------------------------------------------------------
 // ヘルパー
 // ----------------------------------------------------------------
@@ -451,7 +531,7 @@ async function checkAlreadyRunning(step: JobStep): Promise<boolean> {
         .from('job_runs')
         .select('id')
         .eq('status', 'running')
-        .eq('job_type', step === 'cleanup' ? 'cron_cleanup' : 'cron_scrape')
+        .eq('job_type', step === 'cleanup' ? 'cron_cleanup' : step === 'result' ? 'cron_result' : 'cron_scrape')
         .limit(1);
 
     if (error) {

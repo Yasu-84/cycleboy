@@ -3,6 +3,8 @@ import type { RaceEntry } from '@/types/raceEntry';
 import type { RaceRecentResult } from '@/types/raceRecentResult';
 import type { RaceMatchResult } from '@/types/raceMatchResult';
 import type { RacePrediction } from '@/types/racePrediction';
+import type { RaceResult } from '@/types/raceResult';
+import type { RaceRefund } from '@/types/raceRefund';
 import EntryTabs from './EntryTabs';
 import BackButton from './BackButton';
 import styles from './entry.module.css';
@@ -130,6 +132,28 @@ async function getRacePrediction(raceId: string): Promise<RacePrediction | null>
     return (data as RacePrediction) ?? null;
 }
 
+async function getRaceResults(raceId: string): Promise<RaceResult[]> {
+    const { data, error } = await supabase
+        .from('race_results')
+        .select('*')
+        .eq('netkeiba_race_id', raceId)
+        .order('rank');
+
+    if (error) throw new Error(`[getRaceResults] ${error.message}`);
+    return (data as RaceResult[]) ?? [];
+}
+
+async function getRaceRefunds(raceId: string): Promise<RaceRefund[]> {
+    const { data, error } = await supabase
+        .from('race_refunds')
+        .select('*')
+        .eq('netkeiba_race_id', raceId)
+        .order('bet_type');
+
+    if (error) throw new Error(`[getRaceRefunds] ${error.message}`);
+    return (data as RaceRefund[]) ?? [];
+}
+
 // ------------------------------------------------------------------
 // Page Component
 // ------------------------------------------------------------------
@@ -151,12 +175,14 @@ export default async function EntryPage({
         );
     }
 
-    const [raceInfo, entries, recentResults, matchResults, prediction] = await Promise.all([
+    const [raceInfo, entries, recentResults, matchResults, prediction, raceResults, raceRefunds] = await Promise.all([
         getRaceInfo(raceId),
         getEntries(raceId),
         getRecentResults(raceId),
         getMatchResults(raceId),
         getRacePrediction(raceId),
+        getRaceResults(raceId),
+        getRaceRefunds(raceId),
     ]);
 
     if (!raceInfo) {
@@ -199,6 +225,8 @@ export default async function EntryPage({
                 recentResults={recentResults}
                 matchResults={matchResults}
                 prediction={prediction}
+                results={raceResults}
+                refunds={raceRefunds}
             />
 
             {/* 下部戻るボタン */}

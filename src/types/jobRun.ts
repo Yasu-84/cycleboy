@@ -1,8 +1,8 @@
 /** ジョブ種別 */
-export type JobType = 'cron_scrape' | 'cron_cleanup' | 'admin_scrape' | 'admin_prediction';
+export type JobType = 'cron_scrape' | 'cron_cleanup' | 'admin_scrape' | 'admin_prediction' | 'cron_result';
 
 /** ジョブ実行ステップ */
-export type JobStep = 'all' | 'schedule' | 'program' | 'entry' | 'prediction' | 'cleanup';
+export type JobStep = 'all' | 'schedule' | 'program' | 'entry' | 'prediction' | 'result' | 'cleanup';
 
 /** ジョブ実行状態 */
 export type JobStatus = 'running' | 'success' | 'failed' | 'skipped';

@@ -13,6 +13,8 @@
  *   6. race_schedules
  */
 import { getJstDateMinusDays } from '@/lib/utils/dateUtils';
+import * as raceRefundRepo from '@/lib/repositories/raceRefundRepository';
+import * as raceResultRepo from '@/lib/repositories/raceResultRepository';
 import * as raceMatchResultRepo from '@/lib/repositories/raceMatchResultRepository';
 import * as raceRecentResultRepo from '@/lib/repositories/raceRecentResultRepository';
 import * as raceEntryRepo from '@/lib/repositories/raceEntryRepository';
@@ -54,6 +56,8 @@ export async function run(options: CleanupOptions = {}): Promise<CleanupResult> 
 
     try {
         // 子→親の順で削除（RESTRICT FK 制約を遵守）
+        deleted.race_refunds = await raceRefundRepo.deleteOlderThan(thresholdUtc);
+        deleted.race_results = await raceResultRepo.deleteOlderThan(thresholdUtc);
         deleted.race_match_results = await raceMatchResultRepo.deleteOlderThan(thresholdUtc);
         deleted.race_recent_results = await raceRecentResultRepo.deleteOlderThan(thresholdUtc);
         deleted.race_entries = await raceEntryRepo.deleteOlderThan(thresholdUtc);

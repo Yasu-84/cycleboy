@@ -12,7 +12,7 @@ const POLL_INTERVAL_MS = 3_000;
 const ADMIN_API_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY ?? '';
 
 type WorkflowType = 'scrape' | 'cleanup' | 'prediction';
-type StepType = 'all' | 'schedule' | 'program' | 'entry' | 'prediction';
+type StepType = 'all' | 'schedule' | 'program' | 'entry' | 'prediction' | 'result';
 
 interface TriggerOptions {
     workflow: WorkflowType;
@@ -256,6 +256,15 @@ export default function AdminPage() {
                         >
                             🗑 削除処理（31日以上前のデータ）
                         </button>
+
+                        <button
+                            id="btn-scrape-result"
+                            className={`${styles.btn} ${styles.btnSecondary}`}
+                            disabled={loading}
+                            onClick={() => triggerWorkflow({ workflow: 'scrape', step: 'result', targetDate })}
+                        >
+                            🏁 結果取得
+                        </button>
                     </div>
 
                     {/* ステータスメッセージ */}
@@ -348,6 +357,7 @@ function formatJobType(t: string): string {
     const map: Record<string, string> = {
         cron_scrape: 'スクレイプ',
         cron_cleanup: 'クリーンアップ',
+        cron_result: '結果取得',
         admin_scrape: 'スクレイプ(手動)',
         admin_prediction: 'AI予想(手動)',
     };

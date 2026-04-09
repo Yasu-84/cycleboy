@@ -10,7 +10,10 @@ import MatchResultsTab from './MatchResultsTab';
 import FormationTab from './FormationTab';
 import AIPredictionTab from './AIPredictionTab';
 import BettingTab from './BettingTab';
+import ResultTab from './ResultTab';
 import type { RacePrediction } from '@/types/racePrediction';
+import type { RaceResult } from '@/types/raceResult';
+import type { RaceRefund } from '@/types/raceRefund';
 import styles from './entry.module.css';
 
 interface EntryTabsProps {
@@ -18,9 +21,11 @@ interface EntryTabsProps {
     recentResults: RaceRecentResult[];
     matchResults: RaceMatchResult[];
     prediction: RacePrediction | null;
+    results: RaceResult[];
+    refunds: RaceRefund[];
 }
 
-const TABS = ['基本情報', '直近成績', '対戦表', '並び予想', 'AI予想', '買い目'] as const;
+const TABS = ['基本情報', '直近成績', '対戦表', '並び予想', 'AI予想', '買い目', '結果'] as const;
 type TabName = (typeof TABS)[number];
 
 export default function EntryTabs({
@@ -28,6 +33,8 @@ export default function EntryTabs({
     recentResults,
     matchResults,
     prediction,
+    results,
+    refunds,
 }: EntryTabsProps) {
     const [activeTab, setActiveTab] = useState<TabName>('基本情報');
 
@@ -56,6 +63,7 @@ export default function EntryTabs({
                 {activeTab === '並び予想' && <FormationTab entries={entries} prediction={prediction} />}
                 {activeTab === 'AI予想' && <AIPredictionTab prediction={prediction} />}
                 {activeTab === '買い目' && <BettingTab prediction={prediction} />}
+                {activeTab === '結果' && <ResultTab results={results} refunds={refunds} />}
             </div>
         </>
     );
