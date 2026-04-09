@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       step:
-        description: '実行ステップ (all / schedule / program / entry)'
+        description: '実行ステップ (all / schedule / program / entry / result)'
         required: false
         default: 'all'
         type: choice
@@ -16,6 +16,7 @@ on:
           - schedule
           - program
           - entry
+          - result
       target_date:
         description: '対象日付 (YYYY-MM-DD, 省略時は JST 当日)'
         required: false

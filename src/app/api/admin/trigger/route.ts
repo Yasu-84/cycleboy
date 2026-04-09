@@ -25,7 +25,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isValidDateString, isNotFutureDate } from '@/lib/utils/dateUtils';
 
 type Workflow = 'scrape' | 'cleanup' | 'prediction';
-type Step = 'all' | 'schedule' | 'program' | 'entry' | 'prediction';
+type Step = 'all' | 'schedule' | 'program' | 'entry' | 'prediction' | 'result';
 
 interface TriggerBody {
     workflow: Workflow;
@@ -34,7 +34,7 @@ interface TriggerBody {
 }
 
 const VALID_WORKFLOWS: Workflow[] = ['scrape', 'cleanup', 'prediction'];
-const VALID_STEPS: Step[] = ['all', 'schedule', 'program', 'entry', 'prediction'];
+const VALID_STEPS: Step[] = ['all', 'schedule', 'program', 'entry', 'prediction', 'result'];
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
     // 1. API キー認証
@@ -116,6 +116,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         // cleanup は inputs なし
     } else if (workflow === 'prediction') {
         if (target_date) inputs.target_date = target_date;
+    }
+
+    // result ステップは scrape.yml の choice に含まれていないため、
+    // 入力値を text として渡す
+    if (step === 'result') {
+        inputs.step = 'result';
     }
 
     try {
