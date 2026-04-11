@@ -28,6 +28,12 @@ interface EntryTabsProps {
 const TABS = ['基本情報', '直近成績', '対戦表', '並び予想', 'AI予想', '買い目', '結果'] as const;
 type TabName = (typeof TABS)[number];
 
+const TAB_IDS = ['basic', 'recent', 'match', 'formation', 'prediction', 'betting', 'result'] as const;
+
+function getTabPanelId(index: number): string {
+    return `tabpanel-${TAB_IDS[index]}`;
+}
+
 export default function EntryTabs({
     entries,
     recentResults,
@@ -38,15 +44,40 @@ export default function EntryTabs({
 }: EntryTabsProps) {
     const [activeTab, setActiveTab] = useState<TabName>('基本情報');
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        const currentIdx = TABS.indexOf(activeTab);
+        let nextIdx = currentIdx;
+
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            nextIdx = (currentIdx + 1) % TABS.length;
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            nextIdx = (currentIdx - 1 + TABS.length) % TABS.length;
+        } else if (e.key === 'Home') {
+            nextIdx = 0;
+        } else if (e.key === 'End') {
+            nextIdx = TABS.length - 1;
+        } else {
+            return;
+        }
+
+        e.preventDefault();
+        setActiveTab(TABS[nextIdx]);
+        document.getElementById(`tab-${TAB_IDS[nextIdx]}`)?.focus();
+    };
+
+    const activeIdx = TABS.indexOf(activeTab);
+
     return (
         <>
-            {/* タブバー */}
-            <div className={styles.tabBar} role="tablist">
-                {TABS.map((tab) => (
+            <div className={styles.tabBar} role="tablist" aria-label="エントリー詳細タブ" onKeyDown={handleKeyDown}>
+                {TABS.map((tab, i) => (
                     <button
                         key={tab}
+                        id={`tab-${TAB_IDS[i]}`}
                         role="tab"
                         aria-selected={activeTab === tab}
+                        aria-controls={getTabPanelId(i)}
+                        tabIndex={activeTab === tab ? 0 : -1}
                         className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ''}`}
                         onClick={() => setActiveTab(tab)}
                     >
@@ -55,8 +86,12 @@ export default function EntryTabs({
                 ))}
             </div>
 
-            {/* タブコンテンツ */}
-            <div className={styles.tabContent}>
+            <div
+                className={styles.tabContent}
+                role="tabpanel"
+                id={getTabPanelId(activeIdx)}
+                aria-labelledby={`tab-${TAB_IDS[activeIdx]}`}
+            >
                 {activeTab === '基本情報' && <BasicInfoTab entries={entries} />}
                 {activeTab === '直近成績' && <RecentResultsTab results={recentResults} />}
                 {activeTab === '対戦表' && <MatchResultsTab results={matchResults} />}

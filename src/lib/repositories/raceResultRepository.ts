@@ -20,7 +20,7 @@ export async function upsertRaceResults(records: RaceResultInput[]): Promise<voi
 export async function getByRaceId(netkeiba_race_id: string): Promise<RaceResult[]> {
     const { data, error } = await supabase
         .from(TABLE)
-        .select('*')
+        .select('id,netkeiba_race_id,rank,waku_no,sha_no,player_name,margin,last_lap,move_type,sb_flag,created_at')
         .eq('netkeiba_race_id', netkeiba_race_id)
         .order('rank');
 

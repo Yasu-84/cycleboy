@@ -21,7 +21,7 @@ export async function upsertRacePrediction(record: RacePredictionInput): Promise
 export async function getByRaceId(netkeiba_race_id: string): Promise<RacePrediction | null> {
     const { data, error } = await supabase
         .from(TABLE)
-        .select('*')
+        .select('id,netkeiba_race_id,section1_confidence,section2_development,section3_line_evaluation,section4_favorite_scenario,section5_medium_hole_scenario,section6_recommended_bets,section7_aim_word,created_at')
         .eq('netkeiba_race_id', netkeiba_race_id)
         .single();
 
@@ -41,7 +41,7 @@ export async function getByRaceId(netkeiba_race_id: string): Promise<RacePredict
 export async function getByDate(kaisai_date: string): Promise<RacePrediction[]> {
     const { data, error } = await supabase
         .from(TABLE)
-        .select('*, races!inner(*)')
+        .select('id,netkeiba_race_id,section1_confidence,section2_development,section3_line_evaluation,section4_favorite_scenario,section5_medium_hole_scenario,section6_recommended_bets,section7_aim_word,created_at,races!inner(netkeiba_race_id)')
         .eq('races.programs.kaisai_date', kaisai_date);
 
     if (error) throw new Error(`[racePredictionRepository.getByDate] ${error.message}`);

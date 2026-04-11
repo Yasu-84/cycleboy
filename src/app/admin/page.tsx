@@ -67,8 +67,23 @@ export default function AdminPage() {
     useEffect(() => {
         void fetchJobRuns();
         pollTimer.current = setInterval(() => void fetchJobRuns(), POLL_INTERVAL_MS);
+
+        const handleVisibility = () => {
+            if (document.hidden) {
+                if (pollTimer.current) {
+                    clearInterval(pollTimer.current);
+                    pollTimer.current = null;
+                }
+            } else {
+                void fetchJobRuns();
+                pollTimer.current = setInterval(() => void fetchJobRuns(), POLL_INTERVAL_MS);
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+
         return () => {
             if (pollTimer.current) clearInterval(pollTimer.current);
+            document.removeEventListener('visibilitychange', handleVisibility);
         };
     }, [fetchJobRuns]);
 
@@ -228,7 +243,7 @@ export default function AdminPage() {
                             🤖 AI予想実行（対象日付: {targetDate}）
                         </button>
                     </div>
-                    <p style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#888' }}>
+                    <p className={styles.note}>
                         ※ AI予想は対象日付の出走表データが必要です。先にスクレイピングを実行してください。
                     </p>
                 </div>
@@ -236,7 +251,7 @@ export default function AdminPage() {
                 {/* === ジョブ履歴セクション === */}
                 <div className={styles.section}>
                     <div className={styles.pollRow}>
-                        <p className={styles.sectionTitle} style={{ margin: 0 }}>ジョブ実行履歴</p>
+                        <p className={`${styles.sectionTitle} ${styles.pollSectionTitle}`}>ジョブ実行履歴</p>
                         <div className={styles.pollIndicator}>
                             <span className={styles.pollDot} />
                             <span>

@@ -298,3 +298,15 @@
   color: #555;
   font-size: 0.85rem;
 }
+
+/* --- 注意書き --- */
+.note {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* --- ポーリング行のセクションタイトル --- */
+.pollSectionTitle {
+  margin: 0;
+}

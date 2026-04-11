@@ -26,7 +26,7 @@ export async function findProgramByScheduleAndDate(
 ): Promise<Program | null> {
     const { data, error } = await supabase
         .from(TABLE)
-        .select('*')
+        .select('id,race_schedule_id,kaisai_date,grade,kaisai_type,program_type,created_at')
         .eq('race_schedule_id', race_schedule_id)
         .eq('kaisai_date', kaisai_date)
         .maybeSingle();
@@ -42,7 +42,7 @@ export async function findProgramByScheduleAndDate(
 export async function getProgramsByDate(kaisai_date: string): Promise<Program[]> {
     const { data, error } = await supabase
         .from(TABLE)
-        .select('*')
+        .select('id,race_schedule_id,kaisai_date,grade,kaisai_type,program_type,created_at')
         .eq('kaisai_date', kaisai_date);
 
     if (error) throw new Error(`[programRepository.getByDate] ${error.message}`);

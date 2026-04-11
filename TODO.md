@@ -8,12 +8,11 @@
 
 ---
 
-## 未対応タスク
+## 完了済み（2026-04-11）
 
 ### High 優先度
 
 - [x] **#7** GitHub Actionsにリトライなし → `nick-fields/retry@v3` で max_attempts: 3 を追加
-  - 対象: `.github/workflows/scrape.yml`, `cleanup.yml`, `prediction.yml`, `result.yml`
 - [x] **#8** PR向けCIパイプラインなし → `lint` + `build` を実行する `.github/workflows/ci.yml` を新規作成
 - [x] **#5** `parseKaisaiDate` の日付解析バグ → 3桁月日の曖昧さを日付バリデーションで解消
 - [x] **#4** `predictionService` の日付計算がUTC基準 → `getJstToday()` に修正
@@ -33,17 +32,17 @@
 
 ### Low 優先度
 
-- [ ] **#19** GitHub ActionsがSHA固定ではない（タグ参照）
-- [ ] **#20** Dependabot設定なし → `.github/dependabot.yml` 新規作成
-- [ ] **#21** 失敗時の通知なし（Slack等）→ 全ワークフローに通知ステップ追加
-- [ ] **#22** デッドコード削除: `parseTimes`, `extractJyoCdFromParam`, `formatJobType`（admin）
-- [ ] **#23** no-op正規表現: `replace(/\//g, '/')` → `raceRecentResultScraper.ts:143`
-- [ ] **#24** `SCRAPE_DELAY_MS` のNaN検証なし → `fetchUtils.ts:156`
-- [ ] **#25** `loading.tsx` / `error.tsx` が存在しない → 全ルートセグメントに追加
-- [ ] **#26** タブコンポーネントのARIA不完全 → `EntryTabs.tsx`
-- [ ] **#27** インラインスタイルの混在 → 6コンポーネント（CSS Modulesに移行）
-- [ ] **#28** `select('*')` の多用 → 全リポジトリ（必要列のみ取得）
-- [ ] **#29** 管理者画面の3秒ポーリングがバックグラウンドでも継続 → `visibilitychange` 対応
+- [x] **#19** GitHub ActionsがSHA固定ではない → コミットSHA + タグコメントに変更（Dependabotで自動更新）
+- [x] **#20** Dependabot設定なし → `.github/dependabot.yml` 新規作成（GitHub Actions + npm、週次更新）
+- [x] **#21** 失敗時の通知なし → 全ワークフローに `NOTIFY_WEBHOOK_URL` 条件付き通知ステップ追加
+- [x] **#22** デッドコード削除: `parseTimes`, `extractJyoCdFromParam`, `formatJobType` → **既に削除済み**
+- [x] **#23** no-op正規表現: `replace(/\//g, '/')` → `replace(/\//g, '-')` に修正（`raceRecentResultScraper.ts`）
+- [x] **#24** `SCRAPE_DELAY_MS` のNaN検証なし → `Number.isNaN()` でフォールバック（`fetchUtils.ts`）
+- [x] **#25** `loading.tsx` / `error.tsx` が存在しない → 全4ルートセグメントに追加
+- [x] **#26** タブコンポーネントのARIA不完全 → `role="tabpanel"`, `aria-controls`, `aria-labelledby`, キーボードナビゲーション対応
+- [x] **#27** インラインスタイルの混在 → 全11箇所をCSS Modulesに移行（6コンポーネント）
+- [x] **#28** `select('*')` の多用 → 全リポジトリの14クエリを明示的列指定に変更
+- [x] **#29** 管理者画面の3秒ポーリングがバックグラウンドでも継続 → `visibilitychange` 対応
 
 ---
 
@@ -52,3 +51,11 @@
 - `NEXT_PUBLIC_ADMIN_API_KEY` → `ADMIN_API_KEY` にリネーム
   - `.env.local.example` は既に `ADMIN_API_KEY` なので変更不要
   - Vercel / GitHub Secrets の環境変数名を更新すること
+
+## 新規シークレット（通知機能用・任意）
+
+- `NOTIFY_WEBHOOK_URL`: ワークフロー失敗時の通知用Webhook URL（Slack/Discord等）。設定しない場合通知はスキップされる。
+
+---
+
+**全タスク完了（2026-04-11）**

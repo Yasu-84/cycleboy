@@ -139,7 +139,7 @@ function parseRecentSessions(
             // 開催情報ヘッダーから日付・グレード・競輪場を取得
             const headerText = $(block).text().trim();
             const headerMatch = headerText.match(/^(\d{1,2}\/\d{1,2})/);
-            const kaisai_date = headerMatch ? headerMatch[1].replace(/\//g, '/') : '';
+            const kaisai_date = headerMatch ? headerMatch[1].replace(/\//g, '-') : '';
 
             const rawGrade = $(block).find('[class*="Icon_GradeType"]').first().text().trim() || 'F1';
             const grade = normalizeGrade(rawGrade);

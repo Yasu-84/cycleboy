@@ -17,7 +17,7 @@ export default function BettingTab({ prediction }: BettingTabProps) {
             <div className={styles.predictionSection}>
                 <h3 className={styles.predictionTitle}>狙い目の一言</h3>
                 <div className={styles.predictionBox}>
-                    <p className={styles.predictionText} style={{ whiteSpace: 'pre-wrap' }}>
+                    <p className={`${styles.predictionText} ${styles.preWrap}`}>
                         {prediction.section7_aim_word || 'データなし'}
                     </p>
                 </div>
@@ -26,7 +26,7 @@ export default function BettingTab({ prediction }: BettingTabProps) {
             <div className={styles.predictionSection}>
                 <h3 className={styles.predictionTitle}>推奨買い目</h3>
                 <div className={styles.predictionBox}>
-                    <p className={styles.predictionText} style={{ whiteSpace: 'pre-wrap' }}>
+                    <p className={`${styles.predictionText} ${styles.preWrap}`}>
                         {prediction.section6_recommended_bets || 'データなし'}
                     </p>
                 </div>

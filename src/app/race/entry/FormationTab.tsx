@@ -61,10 +61,10 @@ export default function FormationTab({ entries, prediction }: FormationTabProps)
 
             {/* セクション3（ライン別評価）の表示エリア */}
             {prediction && prediction.section3_line_evaluation && (
-                <div className={styles.predictionSection} style={{ marginTop: '2rem' }}>
+                <div className={`${styles.predictionSection} ${styles.sectionSpaced}`}>
                     <h3 className={styles.predictionTitle}>ライン別評価（各ラインの勝機と懸念点）</h3>
                     <div className={styles.predictionBox}>
-                        <p className={styles.predictionText} style={{ whiteSpace: 'pre-wrap' }}>
+                        <p className={`${styles.predictionText} ${styles.preWrap}`}>
                             {prediction.section3_line_evaluation}
                         </p>
                     </div>

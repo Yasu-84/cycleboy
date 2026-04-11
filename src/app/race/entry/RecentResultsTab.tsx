@@ -73,7 +73,7 @@ function renderSession(session: RecentSession | null, label: string) {
         <div className={styles.recentCol}>
             <div className={styles.recentColHeader}>
                 <span className={styles.recentDate}>{formatSessionDate(session.kaisai_date)}</span>
-                <span className={`grade-badge ${getGradeBadgeClass(session.grade)}`} style={{ fontSize: '9px', padding: '1px 4px' }}>
+                <span className={`grade-badge ${getGradeBadgeClass(session.grade)} ${styles.gradeBadgeSmall}`}>
                     {getGradeLabel(session.grade)}
                 </span>
                 <span className={styles.recentJyo}>{session.jyo_name}</span>

@@ -20,7 +20,7 @@ export async function upsertRaceRefunds(records: RaceRefundInput[]): Promise<voi
 export async function getByRaceId(netkeiba_race_id: string): Promise<RaceRefund[]> {
     const { data, error } = await supabase
         .from(TABLE)
-        .select('*')
+        .select('id,netkeiba_race_id,bet_type,combination,payout,popularity,created_at')
         .eq('netkeiba_race_id', netkeiba_race_id)
         .order('bet_type');
 

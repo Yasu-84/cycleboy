@@ -30,7 +30,7 @@ export async function getRaceSchedulesByMonth(
 
     const { data, error } = await supabase
         .from(TABLE)
-        .select('*')
+        .select('id,jyo_cd,jyo_name,grade,kaisai_name,start_date,end_date,created_at')
         .lte('start_date', endOfMonth)
         .gte('end_date', startOfMonth);
 
@@ -45,7 +45,7 @@ export async function getRaceSchedulesByMonth(
 export async function getActiveSchedulesByDate(targetDate: string): Promise<RaceSchedule[]> {
     const { data, error } = await supabase
         .from(TABLE)
-        .select('*')
+        .select('id,jyo_cd,jyo_name,grade,kaisai_name,start_date,end_date,created_at')
         .lte('start_date', targetDate)
         .gte('end_date', targetDate);
 
@@ -63,7 +63,7 @@ export async function findScheduleByJyoAndDate(
 ): Promise<RaceSchedule | null> {
     const { data, error } = await supabase
         .from(TABLE)
-        .select('*')
+        .select('id,jyo_cd,jyo_name,grade,kaisai_name,start_date,end_date,created_at')
         .eq('jyo_cd', jyo_cd)
         .lte('start_date', targetDate)
         .gte('end_date', targetDate)

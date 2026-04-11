@@ -703,3 +703,17 @@ tbody .stickyCol {
 .highPayout {
     color: var(--color-accent);
 }
+
+/* ---- テキストユーティリティ ---- */
+.preWrap {
+    white-space: pre-wrap;
+}
+
+.sectionSpaced {
+    margin-top: 2rem;
+}
+
+.gradeBadgeSmall {
+    font-size: 9px;
+    padding: 1px 4px;
+}

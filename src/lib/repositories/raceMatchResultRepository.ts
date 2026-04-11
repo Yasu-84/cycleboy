@@ -23,7 +23,7 @@ export async function upsertRaceMatchResults(records: RaceMatchResultInput[]): P
 export async function getByRaceId(netkeiba_race_id: string): Promise<RaceMatchResult[]> {
     const { data, error } = await supabase
         .from(TABLE)
-        .select('*')
+        .select('id,netkeiba_race_id,waku_no,sha_no,player_name,total,vs_records,created_at')
         .eq('netkeiba_race_id', netkeiba_race_id)
         .order('sha_no');
 

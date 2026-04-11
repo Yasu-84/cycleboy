@@ -153,6 +153,7 @@ export async function fetchPageWithErrorDetails(path: string): Promise<
  * SCRAPE_DELAY_MS 環境変数で制御（デフォルト: 500ms）
  */
 export async function scrapeDelay(): Promise<void> {
-    const ms = parseInt(process.env.SCRAPE_DELAY_MS ?? '500', 10);
+    const parsed = parseInt(process.env.SCRAPE_DELAY_MS ?? '500', 10);
+    const ms = Number.isNaN(parsed) ? 500 : parsed;
     await sleep(ms);
 }

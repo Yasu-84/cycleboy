@@ -66,16 +66,7 @@ function getKaisaiTypeBadge(types: string[] | null): { label: string; className:
 }
 
 function formatTime(time: string): string {
-    // HH:MM:SS -> HH:MM
     return time.slice(0, 5);
-}
-
-function getRaceNoBgColor(_raceNo?: number): string {
-    return '#FFFFFF';
-}
-
-function getRaceNoTextColor(_raceNo?: number): string {
-    return '#333';
 }
 
 // ------------------------------------------------------------------
@@ -210,14 +201,7 @@ export default async function RaceListPage({
                             href={`/race/entry?race_id=${race.netkeiba_race_id}`}
                             className={styles.raceCard}
                         >
-                            <div
-                                className={styles.raceNo}
-                                style={{
-                                    backgroundColor: getRaceNoBgColor(race.race_no),
-                                    color: getRaceNoTextColor(race.race_no),
-                                    border: '1px solid #CCC',
-                                }}
-                            >
+                            <div className={styles.raceNo}>
                                 {race.race_no}R
                             </div>
                             <div className={styles.raceBody}>

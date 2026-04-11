@@ -19,10 +19,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
           cache: 'npm'
@@ -31,7 +31,7 @@ jobs:
         run: npm ci
 
       - name: Run prediction
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -43,3 +43,11 @@ jobs:
           max_attempts: 3
           retry_wait_seconds: 60
           command: npx tsx scripts/scrape.ts prediction "${{ inputs.target_date || '' }}"
+
+      - name: Notify on failure
+        if: failure() && secrets.NOTIFY_WEBHOOK_URL != ''
+        run: |
+          curl -s -X POST "${{ secrets.NOTIFY_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\":\"❌ [Run AI Prediction] #${{ github.run_number }} failed\\n${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}\"}"
+        continue-on-error: true

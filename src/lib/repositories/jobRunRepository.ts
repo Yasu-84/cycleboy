@@ -70,7 +70,7 @@ export async function recordJobError(input: JobErrorInput): Promise<void> {
 export async function getJobErrors(job_run_id: string): Promise<JobError[]> {
     const { data, error } = await supabase
         .from(ERRORS_TABLE)
-        .select('*')
+        .select('id,job_run_id,step,error_type,message,detail,stack_trace,retry_count,context,occurred_at')
         .eq('job_run_id', job_run_id)
         .order('occurred_at');
 
@@ -84,7 +84,7 @@ export async function getJobErrors(job_run_id: string): Promise<JobError[]> {
 export async function getRecentJobRuns(limit = 20): Promise<JobRun[]> {
     const { data, error } = await supabase
         .from(RUNS_TABLE)
-        .select('*')
+        .select('id,job_type,step,status,started_at,finished_at,trigger_source,trigger_by,summary,created_at')
         .order('started_at', { ascending: false })
         .limit(limit);
 

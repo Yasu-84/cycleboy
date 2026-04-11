@@ -26,7 +26,7 @@ export default function AIPredictionTab({ prediction }: AIPredictionTabProps) {
             <div className={styles.predictionSection}>
                 <h3 className={styles.predictionTitle}>展開予想</h3>
                 <div className={styles.predictionBox}>
-                    <p className={styles.predictionText} style={{ whiteSpace: 'pre-wrap' }}>
+                    <p className={`${styles.predictionText} ${styles.preWrap}`}>
                         {prediction.section2_development || 'データなし'}
                     </p>
                 </div>
@@ -35,12 +35,12 @@ export default function AIPredictionTab({ prediction }: AIPredictionTabProps) {
             <div className={styles.predictionSection}>
                 <h3 className={styles.predictionTitle}>【本命シナリオ】 【中穴シナリオ】</h3>
                 <div className={styles.predictionBox}>
-                    <p className={styles.predictionText} style={{ whiteSpace: 'pre-wrap' }}>
+                    <p className={`${styles.predictionText} ${styles.preWrap}`}>
                         {prediction.section4_favorite_scenario || 'データなし'}
                     </p>
                 </div>
                 <div className={styles.predictionBox}>
-                    <p className={styles.predictionText} style={{ whiteSpace: 'pre-wrap' }}>
+                    <p className={`${styles.predictionText} ${styles.preWrap}`}>
                         {prediction.section5_medium_hole_scenario || 'データなし'}
                     </p>
                 </div>

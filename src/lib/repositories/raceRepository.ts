@@ -23,7 +23,7 @@ export async function upsertRaces(records: RaceInput[]): Promise<void> {
 export async function getRacesByProgramId(program_id: string): Promise<Race[]> {
     const { data, error } = await supabase
         .from(TABLE)
-        .select('*')
+        .select('id,program_id,netkeiba_race_id,race_no,race_title,car_count,departure_time,deadline_time,created_at')
         .eq('program_id', program_id)
         .order('race_no');
 
@@ -38,7 +38,7 @@ export async function getRacesByProgramId(program_id: string): Promise<Race[]> {
 export async function getRacesByDate(kaisai_date: string): Promise<Race[]> {
     const { data, error } = await supabase
         .from(TABLE)
-        .select('*, programs!inner(kaisai_date)')
+        .select('id,program_id,netkeiba_race_id,race_no,race_title,car_count,departure_time,deadline_time,created_at,programs!inner(kaisai_date)')
         .eq('programs.kaisai_date', kaisai_date)
         .order('race_no');
 
