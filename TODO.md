@@ -46,16 +46,4 @@
 
 ---
 
-## 環境変数の変更が必要（本番デプロイ時）
-
-- `NEXT_PUBLIC_ADMIN_API_KEY` → `ADMIN_API_KEY` にリネーム
-  - `.env.local.example` は既に `ADMIN_API_KEY` なので変更不要
-  - Vercel / GitHub Secrets の環境変数名を更新すること
-
-## 新規シークレット（通知機能用・任意）
-
-- `NOTIFY_WEBHOOK_URL`: ワークフロー失敗時の通知用Webhook URL（Slack/Discord等）。設定しない場合通知はスキップされる。
-
----
-
-**全タスク完了（2026-04-11）**
+## 完了済み（2026-04-10）
