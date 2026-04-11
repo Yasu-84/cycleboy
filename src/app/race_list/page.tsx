@@ -135,7 +135,7 @@ async function getRaces(dateStr: string, jyoCd: string): Promise<{
 // ------------------------------------------------------------------
 // Page Component
 // ------------------------------------------------------------------
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function RaceListPage({
     searchParams,

@@ -145,7 +145,7 @@ async function getSchedules(targetDate: string): Promise<ScheduleWithProgram[]> 
 // ------------------------------------------------------------------
 // Page Component
 // ------------------------------------------------------------------
-export const revalidate = 60; // ISR 60秒
+export const dynamic = 'force-dynamic';
 
 export default async function SchedulePage() {
   const today = getTodayJST();
