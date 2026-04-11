@@ -1,4 +1,10 @@
 import { supabase } from '@/lib/supabase/client';
+import { getByRaceId as getEntriesFromRepo } from '@/lib/repositories/raceEntryRepository';
+import { getByRaceId as getRecentFromRepo } from '@/lib/repositories/raceRecentResultRepository';
+import { getByRaceId as getMatchFromRepo } from '@/lib/repositories/raceMatchResultRepository';
+import { getByRaceId as getPredictionFromRepo } from '@/lib/repositories/racePredictionRepository';
+import { getByRaceId as getResultsFromRepo } from '@/lib/repositories/raceResultRepository';
+import { getByRaceId as getRefundsFromRepo } from '@/lib/repositories/raceRefundRepository';
 import type { RaceEntry } from '@/types/raceEntry';
 import type { RaceRecentResult } from '@/types/raceRecentResult';
 import type { RaceMatchResult } from '@/types/raceMatchResult';
@@ -100,72 +106,31 @@ async function getRaceInfo(raceId: string): Promise<RaceInfo | null> {
 }
 
 async function getEntries(raceId: string): Promise<RaceEntry[]> {
-    const { data, error } = await supabase
-        .from('race_entries')
-        .select('*')
-        .eq('netkeiba_race_id', raceId)
-        .order('sha_no', { ascending: true });
-
-    if (error) throw new Error(`[getEntries] ${error.message}`);
-    return (data as unknown as RaceEntry[]) ?? [];
+    return getEntriesFromRepo(raceId);
 }
 
 async function getRecentResults(raceId: string): Promise<RaceRecentResult[]> {
-    const { data, error } = await supabase
-        .from('race_recent_results')
-        .select('*')
-        .eq('netkeiba_race_id', raceId)
-        .order('sha_no', { ascending: true });
-
-    if (error) throw new Error(`[getRecentResults] ${error.message}`);
-    return (data as unknown as RaceRecentResult[]) ?? [];
+    return getRecentFromRepo(raceId);
 }
 
 async function getMatchResults(raceId: string): Promise<RaceMatchResult[]> {
-    const { data, error } = await supabase
-        .from('race_match_results')
-        .select('*')
-        .eq('netkeiba_race_id', raceId)
-        .order('sha_no', { ascending: true });
-
-    if (error) throw new Error(`[getMatchResults] ${error.message}`);
-    return (data as unknown as RaceMatchResult[]) ?? [];
+    return getMatchFromRepo(raceId);
 }
 
 async function getRacePrediction(raceId: string): Promise<RacePrediction | null> {
-    const { data, error } = await supabase
-        .from('race_predictions')
-        .select('*')
-        .eq('netkeiba_race_id', raceId)
-        .maybeSingle();
-
-    if (error) {
-        console.error(`[getRacePrediction] ${error.message}`);
+    try {
+        return await getPredictionFromRepo(raceId);
+    } catch {
         return null;
     }
-    return (data as unknown as RacePrediction) ?? null;
 }
 
 async function getRaceResults(raceId: string): Promise<RaceResult[]> {
-    const { data, error } = await supabase
-        .from('race_results')
-        .select('*')
-        .eq('netkeiba_race_id', raceId)
-        .order('rank');
-
-    if (error) throw new Error(`[getRaceResults] ${error.message}`);
-    return (data as unknown as RaceResult[]) ?? [];
+    return getResultsFromRepo(raceId);
 }
 
 async function getRaceRefunds(raceId: string): Promise<RaceRefund[]> {
-    const { data, error } = await supabase
-        .from('race_refunds')
-        .select('*')
-        .eq('netkeiba_race_id', raceId)
-        .order('bet_type');
-
-    if (error) throw new Error(`[getRaceRefunds] ${error.message}`);
-    return (data as unknown as RaceRefund[]) ?? [];
+    return getRefundsFromRepo(raceId);
 }
 
 // ------------------------------------------------------------------

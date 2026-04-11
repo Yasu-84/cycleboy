@@ -193,6 +193,71 @@ a {
   font-size: 15px;
 }
 
+.loading-page {
+  text-align: center;
+  padding-top: var(--sp-2xl);
+  color: var(--color-text-secondary);
+}
+
+.error-page {
+  text-align: center;
+  padding-top: var(--sp-2xl);
+}
+
+.error-page h2 {
+  color: var(--color-accent);
+  margin-bottom: var(--sp-md);
+}
+
+.error-page p {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--sp-xl);
+}
+
+.error-page button {
+  padding: var(--sp-sm) var(--sp-xl);
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--color-accent);
+  color: #FFF;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* ---- Admin loading/error (ダークテーマ) ---- */
+.admin-loading-page {
+  text-align: center;
+  padding: var(--sp-2xl) 0;
+  color: #888;
+}
+
+.admin-error-page {
+  text-align: center;
+  padding: var(--sp-2xl) 0;
+}
+
+.admin-error-page h2 {
+  color: #ff7b72;
+  margin-bottom: var(--sp-md);
+}
+
+.admin-error-page p {
+  color: #888;
+  margin-bottom: var(--sp-xl);
+}
+
+.admin-error-page button {
+  padding: var(--sp-sm) var(--sp-xl);
+  border-radius: var(--radius-md);
+  border: none;
+  background: #f5c542;
+  color: #0f1117;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
+
 /* ---- スクロールバー ---- */
 ::-webkit-scrollbar {
   height: 6px;

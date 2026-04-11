@@ -65,8 +65,6 @@ export default function EntryTabs({
         document.getElementById(`tab-${TAB_IDS[nextIdx]}`)?.focus();
     };
 
-    const activeIdx = TABS.indexOf(activeTab);
-
     return (
         <>
             <div className={styles.tabBar} role="tablist" aria-label="エントリー詳細タブ" onKeyDown={handleKeyDown}>
@@ -86,20 +84,27 @@ export default function EntryTabs({
                 ))}
             </div>
 
-            <div
-                className={styles.tabContent}
-                role="tabpanel"
-                id={getTabPanelId(activeIdx)}
-                aria-labelledby={`tab-${TAB_IDS[activeIdx]}`}
-            >
-                {activeTab === '基本情報' && <BasicInfoTab entries={entries} />}
-                {activeTab === '直近成績' && <RecentResultsTab results={recentResults} />}
-                {activeTab === '対戦表' && <MatchResultsTab results={matchResults} />}
-                {activeTab === '並び予想' && <FormationTab entries={entries} prediction={prediction} />}
-                {activeTab === 'AI予想' && <AIPredictionTab prediction={prediction} />}
-                {activeTab === '買い目' && <BettingTab prediction={prediction} />}
-                {activeTab === '結果' && <ResultTab results={results} refunds={refunds} />}
-            </div>
+            {TABS.map((tab, i) => {
+                const isActive = activeTab === tab;
+                return (
+                    <div
+                        key={tab}
+                        className={styles.tabContent}
+                        role="tabpanel"
+                        id={getTabPanelId(i)}
+                        aria-labelledby={`tab-${TAB_IDS[i]}`}
+                        hidden={!isActive}
+                    >
+                        {tab === '基本情報' && <BasicInfoTab entries={entries} />}
+                        {tab === '直近成績' && <RecentResultsTab results={recentResults} />}
+                        {tab === '対戦表' && <MatchResultsTab results={matchResults} />}
+                        {tab === '並び予想' && <FormationTab entries={entries} prediction={prediction} />}
+                        {tab === 'AI予想' && <AIPredictionTab prediction={prediction} />}
+                        {tab === '買い目' && <BettingTab prediction={prediction} />}
+                        {tab === '結果' && <ResultTab results={results} refunds={refunds} />}
+                    </div>
+                );
+            })}
         </>
     );
 }

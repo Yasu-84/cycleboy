@@ -1,7 +1,3 @@
 export default function Loading() {
-    return (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
-            <p>管理画面を読み込み中...</p>
-        </div>
-    );
+    return <div className="admin-loading-page">管理画面を読み込み中...</div>;
 }
