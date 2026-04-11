@@ -46,7 +46,7 @@ jobs:
           command: npx tsx scripts/scrape.ts "result" "${{ inputs.target_date || '' }}"
 
       - name: Notify on failure
-        if: failure() && secrets.NOTIFY_WEBHOOK_URL != ''
+        if: ${{ failure() && secrets.NOTIFY_WEBHOOK_URL != '' }}
         run: |
           curl -s -X POST "${{ secrets.NOTIFY_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
