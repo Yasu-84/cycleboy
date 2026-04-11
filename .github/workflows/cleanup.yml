@@ -6,7 +6,6 @@ on:
     - cron: '0 22 * * *'
   workflow_dispatch:
 
-# 同名グループの二重実行を防止
 concurrency:
   group: cleanup
   cancel-in-progress: false
@@ -31,11 +30,11 @@ jobs:
 
       - name: Run cleanup
         uses: nick-fields/retry@v3
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         with:
           timeout_minutes: 10
           max_attempts: 3
           retry_wait_seconds: 30
           command: npx tsx scripts/cleanup.ts
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

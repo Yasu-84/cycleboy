@@ -22,7 +22,6 @@ on:
         required: false
         type: string
 
-# 同名グループの二重実行を防止（実行中のジョブはキャンセルせず、新規起動をスキップ）
 concurrency:
   group: scrape
   cancel-in-progress: false
@@ -47,11 +46,6 @@ jobs:
 
       - name: Run scraper
         uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 30
-          max_attempts: 3
-          retry_wait_seconds: 30
-          command: npx tsx scripts/scrape.ts "${{ inputs.step || 'all' }}" "${{ inputs.target_date || '' }}"
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -59,3 +53,8 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL || 'gemini-1.5-flash' }}
           GEM_SYSTEM_PROMPT: ${{ secrets.GEM_SYSTEM_PROMPT }}
+        with:
+          timeout_minutes: 30
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: npx tsx scripts/scrape.ts "${{ inputs.step || 'all' }}" "${{ inputs.target_date || '' }}"

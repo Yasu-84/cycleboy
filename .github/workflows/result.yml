@@ -35,12 +35,12 @@ jobs:
 
       - name: Run result scraper
         uses: nick-fields/retry@v3
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SCRAPE_DELAY_MS: ${{ secrets.SCRAPE_DELAY_MS || '500' }}
         with:
           timeout_minutes: 30
           max_attempts: 3
           retry_wait_seconds: 30
           command: npx tsx scripts/scrape.ts "result" "${{ inputs.target_date || '' }}"
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SCRAPE_DELAY_MS: ${{ secrets.SCRAPE_DELAY_MS || '500' }}

@@ -8,7 +8,6 @@ on:
         required: false
         type: string
 
-# 同名グループの二重実行を防止
 concurrency:
   group: prediction
   cancel-in-progress: false
@@ -33,14 +32,14 @@ jobs:
 
       - name: Run prediction
         uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 60
-          max_attempts: 3
-          retry_wait_seconds: 60
-          command: npx tsx scripts/scrape.ts prediction "${{ inputs.target_date || '' }}"
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL || 'gemini-1.5-flash' }}
           GEM_SYSTEM_PROMPT: ${{ secrets.GEM_SYSTEM_PROMPT }}
+        with:
+          timeout_minutes: 60
+          max_attempts: 3
+          retry_wait_seconds: 60
+          command: npx tsx scripts/scrape.ts prediction "${{ inputs.target_date || '' }}"
