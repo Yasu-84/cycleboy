@@ -2,19 +2,19 @@ import { supabase } from '@/lib/supabase/client';
 import type { Program, ProgramInput } from '@/types/program';
 
 const TABLE = 'programs';
+const BATCH_SIZE = 500;
 
-/**
- * Program を UPSERT する
- * UPSERT キー: (race_schedule_id, kaisai_date)
- */
 export async function upsertPrograms(records: ProgramInput[]): Promise<void> {
     if (records.length === 0) return;
 
-    const { error } = await supabase
-        .from(TABLE)
-        .upsert(records, { onConflict: 'race_schedule_id,kaisai_date', ignoreDuplicates: false });
+    for (let i = 0; i < records.length; i += BATCH_SIZE) {
+        const batch = records.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase
+            .from(TABLE)
+            .upsert(batch, { onConflict: 'race_schedule_id,kaisai_date', ignoreDuplicates: false });
 
-    if (error) throw new Error(`[programRepository.upsert] ${error.message}`);
+        if (error) throw new Error(`[programRepository.upsert] ${error.message}`);
+    }
 }
 
 /**

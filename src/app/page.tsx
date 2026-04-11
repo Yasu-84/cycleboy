@@ -121,20 +121,20 @@ async function getSchedules(targetDate: string): Promise<ScheduleWithProgram[]> 
   if (error) throw new Error(`[getSchedules] ${error.message}`);
   if (!data) return [];
 
-  const result: ScheduleWithProgram[] = data.map((s: any) => {
-    // 取得したプログラムを日付順にソートする
-    const sortedPrograms = (s.programs || []).sort((a: any, b: any) =>
+  const result: ScheduleWithProgram[] = data.map((s: Record<string, unknown>) => {
+    const programs = (s.programs as Program[]) || [];
+    const sortedPrograms = programs.sort((a, b) =>
       a.kaisai_date.localeCompare(b.kaisai_date)
     );
 
     return {
-      id: s.id,
-      jyo_cd: s.jyo_cd,
-      jyo_name: s.jyo_name,
-      grade: s.grade,
-      kaisai_name: s.kaisai_name,
-      start_date: s.start_date,
-      end_date: s.end_date,
+      id: s.id as string,
+      jyo_cd: s.jyo_cd as string,
+      jyo_name: s.jyo_name as string,
+      grade: s.grade as string,
+      kaisai_name: s.kaisai_name as string,
+      start_date: s.start_date as string,
+      end_date: s.end_date as string,
       programs: sortedPrograms,
     };
   });

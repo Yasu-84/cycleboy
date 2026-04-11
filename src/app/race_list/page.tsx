@@ -22,6 +22,18 @@ interface VenueInfo {
     kaisai_type: string[] | null;
 }
 
+interface ProgramWithSchedule {
+    program_type: string;
+    kaisai_type: string[] | null;
+    id: string;
+    race_schedules: {
+        jyo_name: string;
+        grade: string;
+        kaisai_name: string;
+        jyo_cd: string;
+    };
+}
+
 // ------------------------------------------------------------------
 // ヘルパー
 // ------------------------------------------------------------------
@@ -99,14 +111,13 @@ async function getRaces(dateStr: string, jyoCd: string): Promise<{
 
     if (!progData) return { venue: null, races: [] };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rs = (progData as any).race_schedules;
+    const row = progData as unknown as ProgramWithSchedule;
     const venue: VenueInfo = {
-        jyo_name: rs.jyo_name,
-        grade: rs.grade,
-        kaisai_name: rs.kaisai_name,
-        program_type: progData.program_type,
-        kaisai_type: progData.kaisai_type,
+        jyo_name: row.race_schedules.jyo_name,
+        grade: row.race_schedules.grade,
+        kaisai_name: row.race_schedules.kaisai_name,
+        program_type: row.program_type,
+        kaisai_type: row.kaisai_type,
     };
 
     // レース一覧取得

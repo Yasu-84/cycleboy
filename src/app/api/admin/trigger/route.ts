@@ -23,6 +23,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { isValidDateString, isNotFutureDate } from '@/lib/utils/dateUtils';
+import { isApiKeyValid } from '@/lib/utils/authUtils';
 
 type Workflow = 'scrape' | 'cleanup' | 'prediction';
 type Step = 'all' | 'schedule' | 'program' | 'entry' | 'prediction' | 'result';
@@ -39,8 +40,7 @@ const VALID_STEPS: Step[] = ['all', 'schedule', 'program', 'entry', 'prediction'
 export async function POST(req: NextRequest): Promise<NextResponse> {
     // 1. API キー認証
     const apiKey = req.headers.get('x-admin-api-key') ?? '';
-    const expectedKey = process.env.ADMIN_API_KEY ?? '';
-    if (!expectedKey || apiKey !== expectedKey) {
+    if (!isApiKeyValid(apiKey)) {
         return NextResponse.json(
             { error: 'Unauthorized' },
             { status: 401 }

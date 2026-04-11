@@ -248,29 +248,43 @@ async function callAI(
         try {
             console.log(`[predictionService] AI API call attempt ${attempt}/${maxRetries} for race_id=${raceId}`);
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                {
-                                    text: fullPrompt
-                                }
-                            ]
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30_000);
+
+            let response: Response;
+            try {
+                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [
+                            {
+                                parts: [
+                                    {
+                                        text: fullPrompt
+                                    }
+                                ]
+                            }
+                        ],
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 8192,
                         }
-                    ],
-                    generationConfig: {
-                        temperature: 0.7,
-                        topK: 40,
-                        topP: 0.95,
-                        maxOutputTokens: 8192,
-                    }
-                })
-            });
+                    }),
+                    signal: controller.signal,
+                });
+            } catch (fetchErr) {
+                clearTimeout(timeoutId);
+                if (fetchErr instanceof DOMException && fetchErr.name === 'AbortError') {
+                    throw new Error(`Gemini API call timed out after 30s for race_id=${raceId}`);
+                }
+                throw fetchErr;
+            }
+            clearTimeout(timeoutId);
 
             // APIキーの問題を検出（401 Unauthorized）
             if (response.status === 401) {

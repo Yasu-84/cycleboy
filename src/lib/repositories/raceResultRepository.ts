@@ -2,15 +2,19 @@ import { supabase } from '@/lib/supabase/client';
 import type { RaceResult, RaceResultInput } from '@/types/raceResult';
 
 const TABLE = 'race_results';
+const BATCH_SIZE = 500;
 
 export async function upsertRaceResults(records: RaceResultInput[]): Promise<void> {
     if (records.length === 0) return;
 
-    const { error } = await supabase
-        .from(TABLE)
-        .upsert(records, { onConflict: 'netkeiba_race_id,sha_no', ignoreDuplicates: false });
+    for (let i = 0; i < records.length; i += BATCH_SIZE) {
+        const batch = records.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase
+            .from(TABLE)
+            .upsert(batch, { onConflict: 'netkeiba_race_id,sha_no', ignoreDuplicates: false });
 
-    if (error) throw new Error(`[raceResultRepository.upsert] ${error.message}`);
+        if (error) throw new Error(`[raceResultRepository.upsert] ${error.message}`);
+    }
 }
 
 export async function getByRaceId(netkeiba_race_id: string): Promise<RaceResult[]> {

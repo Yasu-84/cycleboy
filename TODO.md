@@ -27,7 +27,7 @@
 
 ### Medium 優先度
 
-- [ ] **#9** `cleanupService` にジョブロック追加 → **完了済み**（#2-3で対応）
+- [x] **#9** `cleanupService` にジョブロック追加 → **完了済み**（#2-3で対応）
 - [ ] **#11** タイミング攻撃に対するAPIキー比較
   - 対象: `src/app/api/admin/trigger/route.ts:43`, `prediction/route.ts:34`
   - `!==` → `crypto.timingSafeEqual` に変更

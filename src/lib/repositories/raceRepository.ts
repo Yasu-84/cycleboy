@@ -2,19 +2,19 @@ import { supabase } from '@/lib/supabase/client';
 import type { Race, RaceInput } from '@/types/race';
 
 const TABLE = 'races';
+const BATCH_SIZE = 500;
 
-/**
- * Race を UPSERT する
- * UPSERT キー: netkeiba_race_id（UNIQUE 制約）
- */
 export async function upsertRaces(records: RaceInput[]): Promise<void> {
     if (records.length === 0) return;
 
-    const { error } = await supabase
-        .from(TABLE)
-        .upsert(records, { onConflict: 'netkeiba_race_id', ignoreDuplicates: false });
+    for (let i = 0; i < records.length; i += BATCH_SIZE) {
+        const batch = records.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase
+            .from(TABLE)
+            .upsert(batch, { onConflict: 'netkeiba_race_id', ignoreDuplicates: false });
 
-    if (error) throw new Error(`[raceRepository.upsert] ${error.message}`);
+        if (error) throw new Error(`[raceRepository.upsert] ${error.message}`);
+    }
 }
 
 /**

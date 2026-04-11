@@ -2,19 +2,19 @@ import { supabase } from '@/lib/supabase/client';
 import type { RaceSchedule, RaceScheduleInput } from '@/types/raceSchedule';
 
 const TABLE = 'race_schedules';
+const BATCH_SIZE = 500;
 
-/**
- * レース日程を UPSERT する
- * UPSERT キー: (jyo_cd, start_date)
- */
 export async function upsertRaceSchedules(records: RaceScheduleInput[]): Promise<void> {
     if (records.length === 0) return;
 
-    const { error } = await supabase
-        .from(TABLE)
-        .upsert(records, { onConflict: 'jyo_cd,start_date', ignoreDuplicates: false });
+    for (let i = 0; i < records.length; i += BATCH_SIZE) {
+        const batch = records.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase
+            .from(TABLE)
+            .upsert(batch, { onConflict: 'jyo_cd,start_date', ignoreDuplicates: false });
 
-    if (error) throw new Error(`[raceScheduleRepository.upsert] ${error.message}`);
+        if (error) throw new Error(`[raceScheduleRepository.upsert] ${error.message}`);
+    }
 }
 
 /**

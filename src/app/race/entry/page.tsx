@@ -12,6 +12,21 @@ import styles from './entry.module.css';
 // ------------------------------------------------------------------
 // 型定義
 // ------------------------------------------------------------------
+interface RaceInfoRow {
+    race_no: number;
+    race_title: string;
+    departure_time: string;
+    deadline_time: string;
+    car_count: number;
+    programs: {
+        race_schedules: {
+            jyo_name: string;
+            grade: string;
+            kaisai_name: string;
+        };
+    };
+}
+
 interface RaceInfo {
     race_no: number;
     race_title: string;
@@ -71,17 +86,16 @@ async function getRaceInfo(raceId: string): Promise<RaceInfo | null> {
     if (error) throw new Error(`[getRaceInfo] ${error.message}`);
     if (!data) return null;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rs = (data as any).programs.race_schedules;
+    const row = data as unknown as RaceInfoRow;
     return {
-        race_no: data.race_no,
-        race_title: data.race_title,
-        departure_time: data.departure_time,
-        deadline_time: data.deadline_time,
-        car_count: data.car_count,
-        jyo_name: rs.jyo_name,
-        grade: rs.grade,
-        kaisai_name: rs.kaisai_name,
+        race_no: row.race_no,
+        race_title: row.race_title,
+        departure_time: row.departure_time,
+        deadline_time: row.deadline_time,
+        car_count: row.car_count,
+        jyo_name: row.programs.race_schedules.jyo_name,
+        grade: row.programs.race_schedules.grade,
+        kaisai_name: row.programs.race_schedules.kaisai_name,
     };
 }
 
@@ -93,7 +107,7 @@ async function getEntries(raceId: string): Promise<RaceEntry[]> {
         .order('sha_no', { ascending: true });
 
     if (error) throw new Error(`[getEntries] ${error.message}`);
-    return (data as RaceEntry[]) ?? [];
+    return (data as unknown as RaceEntry[]) ?? [];
 }
 
 async function getRecentResults(raceId: string): Promise<RaceRecentResult[]> {
@@ -104,7 +118,7 @@ async function getRecentResults(raceId: string): Promise<RaceRecentResult[]> {
         .order('sha_no', { ascending: true });
 
     if (error) throw new Error(`[getRecentResults] ${error.message}`);
-    return (data as RaceRecentResult[]) ?? [];
+    return (data as unknown as RaceRecentResult[]) ?? [];
 }
 
 async function getMatchResults(raceId: string): Promise<RaceMatchResult[]> {
@@ -115,7 +129,7 @@ async function getMatchResults(raceId: string): Promise<RaceMatchResult[]> {
         .order('sha_no', { ascending: true });
 
     if (error) throw new Error(`[getMatchResults] ${error.message}`);
-    return (data as RaceMatchResult[]) ?? [];
+    return (data as unknown as RaceMatchResult[]) ?? [];
 }
 
 async function getRacePrediction(raceId: string): Promise<RacePrediction | null> {
@@ -129,7 +143,7 @@ async function getRacePrediction(raceId: string): Promise<RacePrediction | null>
         console.error(`[getRacePrediction] ${error.message}`);
         return null;
     }
-    return (data as RacePrediction) ?? null;
+    return (data as unknown as RacePrediction) ?? null;
 }
 
 async function getRaceResults(raceId: string): Promise<RaceResult[]> {
@@ -140,7 +154,7 @@ async function getRaceResults(raceId: string): Promise<RaceResult[]> {
         .order('rank');
 
     if (error) throw new Error(`[getRaceResults] ${error.message}`);
-    return (data as RaceResult[]) ?? [];
+    return (data as unknown as RaceResult[]) ?? [];
 }
 
 async function getRaceRefunds(raceId: string): Promise<RaceRefund[]> {
@@ -151,7 +165,7 @@ async function getRaceRefunds(raceId: string): Promise<RaceRefund[]> {
         .order('bet_type');
 
     if (error) throw new Error(`[getRaceRefunds] ${error.message}`);
-    return (data as RaceRefund[]) ?? [];
+    return (data as unknown as RaceRefund[]) ?? [];
 }
 
 // ------------------------------------------------------------------
