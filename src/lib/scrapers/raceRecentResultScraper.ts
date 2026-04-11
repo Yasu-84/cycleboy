@@ -97,7 +97,7 @@ interface SessionParseResult {
 function parseRecentSessions(
     $: CheerioAPI,
     container: ReturnType<CheerioAPI>,
-    _playerRow: CheerioElement
+    _playerRow?: CheerioElement
 ): SessionParseResult {
     let current_session: CurrentSession | null = null;
     const currentRaces: Array<{ race_name: string; rank: number | string }> = [];

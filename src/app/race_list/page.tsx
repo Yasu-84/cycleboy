@@ -70,11 +70,11 @@ function formatTime(time: string): string {
     return time.slice(0, 5);
 }
 
-function getRaceNoBgColor(_raceNo: number): string {
+function getRaceNoBgColor(_raceNo?: number): string {
     return '#FFFFFF';
 }
 
-function getRaceNoTextColor(_raceNo: number): string {
+function getRaceNoTextColor(_raceNo?: number): string {
     return '#333';
 }
 
