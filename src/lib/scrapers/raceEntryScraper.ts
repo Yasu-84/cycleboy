@@ -54,7 +54,7 @@ export async function scrapeEntry(raceId: string): Promise<EntryScrapeResult> {
     $('tr.PlayerList').each((_, row) => {
         try {
             const tds = $(row).find('td');
-            if (tds.length < 21) return; // 列数が足りない行はスキップ
+            if (tds.length < 22) return; // 列数が足りない行はスキップ
 
             // td[0]: 枠番
             const waku_no = toIntSafe(tds.eq(0).text().trim());

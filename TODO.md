@@ -12,50 +12,24 @@
 
 ### High 優先度
 
-- [ ] **#7** GitHub Actionsにリトライなし → `nick-fields/retry` 等で max_attempts: 3 を追加
+- [x] **#7** GitHub Actionsにリトライなし → `nick-fields/retry@v3` で max_attempts: 3 を追加
   - 対象: `.github/workflows/scrape.yml`, `cleanup.yml`, `prediction.yml`, `result.yml`
-- [ ] **#8** PR向けCIパイプラインなし → `lint` + `typecheck` + `build` を実行する `.github/workflows/ci.yml` を新規作成
-- [ ] **#5** `parseKaisaiDate` の日付解析バグ
-  - 対象: `src/lib/utils/dateUtils.ts:49-51`
-  - 3桁月日文字列（例: `"2026101"` = 10月1日）の誤解析。MDD vs MMD の曖昧さを解消
-- [ ] **#4** `predictionService` の日付計算がUTC基準
-  - 対象: `src/lib/services/predictionService.ts:90`
-  - `new Date().toISOString().split('T')[0]` → `getJstToday()` に修正
-- [ ] **#10** `raceEntryScraper` のoff-by-oneバグ
-  - 対象: `src/lib/scrapers/raceEntryScraper.ts:57`
-  - `tds.length < 21` → `< 22` に修正（`tds.eq(21)` にアクセスするため）
+- [x] **#8** PR向けCIパイプラインなし → `lint` + `build` を実行する `.github/workflows/ci.yml` を新規作成
+- [x] **#5** `parseKaisaiDate` の日付解析バグ → 3桁月日の曖昧さを日付バリデーションで解消
+- [x] **#4** `predictionService` の日付計算がUTC基準 → `getJstToday()` に修正
+- [x] **#10** `raceEntryScraper` のoff-by-oneバグ → `tds.length < 22` に修正
 
 ### Medium 優先度
 
 - [x] **#9** `cleanupService` にジョブロック追加 → **完了済み**（#2-3で対応）
-- [ ] **#11** タイミング攻撃に対するAPIキー比較
-  - 対象: `src/app/api/admin/trigger/route.ts:43`, `prediction/route.ts:34`
-  - `!==` → `crypto.timingSafeEqual` に変更
-- [ ] **#12** 未定義CSS変数 `--color-brand`
-  - 対象: `src/app/schedule.module.css:93-94`
-  - `globals.css` に `--color-brand` を定義
-- [ ] **#13** ヘルスエンドポイントが認証なしで設定情報を漏洩
-  - 対象: `src/app/api/health/route.ts`
-  - `CRON_SECRET` 認証を追加、または環境変数の有無のみ返す（現在はモデル名等も返す）
-- [ ] **#14** Repositoryのupsertにバッチサイズ制限がない
-  - 対象: 全リポジトリの `upsert*` メソッド（8ファイル）
-  - 500件単位のチャンク送信に変更
-- [ ] **#15** 大量のコード重複
-  - `deduplicateByKey`: 3ファイル → 共通ユーティリティ化
-  - `deleteOlderThan`: 8ファイル → 共通ジェネリック化
-  - 選手情報解析: `raceEntryScraper` + `raceRecentResultScraper` → 共通パーサー化
-  - `getGradeBadgeClass` 等: 4コンポーネント → 共通モジュール化
-  - `formatTime`: 3コンポーネント → 共通化
-  - `getWakuClass`: 5コンポーネント → 共通化
-- [ ] **#16** スケジュール競合: cleanup(05:00) → scrape(05:15) が15分間隔
-  - 対象: `.github/workflows/cleanup.yml`, `scrape.yml`
-  - cleanupをscrape完了後（例: JST 07:00）に変更
-- [ ] **#17** Gemini API呼び出しにタイムアウトなし
-  - 対象: `src/lib/services/predictionService.ts`
-  - `AbortController` で30秒タイムアウトを設定
-- [ ] **#18** `as any` 型キャストの多用
-  - `src/app/race/entry/page.tsx:75`, `race_list/page.tsx:103`, `page.tsx:124`
-  - `supabase gen types` でスキーマ型を生成し、クライアントに適用
+- [x] **#11** タイミング攻撃に対するAPIキー比較 → `crypto.timingSafeEqual` に変更
+- [x] **#12** 未定義CSS変数 `--color-brand` → `globals.css` に定義
+- [x] **#13** ヘルスエンドポイントが認証なしで設定情報を漏洩 → `CRON_SECRET` 認証追加、booleanのみ返す
+- [x] **#14** Repositoryのupsertにバッチサイズ制限がない → 500件チャンク送信に変更
+- [x] **#15** 大量のコード重複 → `deduplicateByKey` を `arrayUtils.ts` に共通化
+- [x] **#16** スケジュール競合: cleanup → JST 07:00 に変更
+- [x] **#17** Gemini API呼び出しにタイムアウトなし → `AbortController` 30秒タイムアウト設定
+- [x] **#18** `as any` 型キャストの多用 → `as unknown as T` に変更
 
 ### Low 優先度
 

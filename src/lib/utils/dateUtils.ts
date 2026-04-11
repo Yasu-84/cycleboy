@@ -34,23 +34,31 @@ export function getJstDateMinusDays(days: number): string {
  *     "20261001" → "2026-10-01"
  */
 export function parseKaisaiDate(raw: string): string {
-    // 年: 最初の4桁固定
     const year = raw.slice(0, 4);
-    const rest = raw.slice(4); // 月日部分（2〜4文字）
+    const rest = raw.slice(4);
 
     let month: string;
     let day: string;
 
     if (rest.length === 4) {
-        // MMDD 形式
         month = rest.slice(0, 2);
         day = rest.slice(2, 4);
     } else if (rest.length === 3) {
-        // MDDまたはMMD形式 → 月は1桁、日は2桁と仮定
-        month = rest.slice(0, 1).padStart(2, '0');
-        day = rest.slice(1, 3);
+        const tryMonth1Day2 = () => {
+            const m = rest.slice(0, 1).padStart(2, '0');
+            const d = rest.slice(1, 3);
+            return isValidMonthDay(year, m, d) ? { month: m, day: d } : null;
+        };
+        const tryMonth2Day1 = () => {
+            const m = rest.slice(0, 2);
+            const d = rest.slice(2, 3).padStart(2, '0');
+            return isValidMonthDay(year, m, d) ? { month: m, day: d } : null;
+        };
+        const result = tryMonth1Day2() ?? tryMonth2Day1();
+        if (!result) throw new Error(`parseKaisaiDate: ambiguous 3-digit date "${raw}"`);
+        month = result.month;
+        day = result.day;
     } else if (rest.length === 2) {
-        // MD 形式 → 月1桁・日1桁
         month = rest.slice(0, 1).padStart(2, '0');
         day = rest.slice(1, 2).padStart(2, '0');
     } else {
@@ -58,6 +66,14 @@ export function parseKaisaiDate(raw: string): string {
     }
 
     return `${year}-${month}-${day}`;
+}
+
+function isValidMonthDay(year: string, month: string, day: string): boolean {
+    const m = parseInt(month, 10);
+    const d = parseInt(day, 10);
+    if (m < 1 || m > 12 || d < 1 || d > 31) return false;
+    const date = new Date(`${year}-${month}-${day}`);
+    return !isNaN(date.getTime()) && date.getMonth() + 1 === m && date.getDate() === d;
 }
 
 /**

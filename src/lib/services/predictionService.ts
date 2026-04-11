@@ -9,6 +9,7 @@ import * as raceRecentResultRepo from '@/lib/repositories/raceRecentResultReposi
 import * as raceMatchResultRepo from '@/lib/repositories/raceMatchResultRepository';
 import * as racePredictionRepo from '@/lib/repositories/racePredictionRepository';
 import type { RacePredictionInput } from '@/types/racePrediction';
+import { getJstToday } from '@/lib/utils/dateUtils';
 
 // 型定義
 interface RaceEntryData {
@@ -87,7 +88,7 @@ export interface PredictionResult {
 // ----------------------------------------------------------------
 
 export async function run(options: PredictionOptions = {}): Promise<PredictionResult> {
-    const targetDate = options.targetDate ?? new Date().toISOString().split('T')[0];
+    const targetDate = options.targetDate ?? getJstToday();
 
     console.log(`[predictionService] start  target_date=${targetDate}`);
 

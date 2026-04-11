@@ -32,7 +32,12 @@ jobs:
         run: npm ci
 
       - name: Run prediction
-        run: npx tsx scripts/scrape.ts prediction "${{ inputs.target_date || '' }}"
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 60
+          max_attempts: 3
+          retry_wait_seconds: 60
+          command: npx tsx scripts/scrape.ts prediction "${{ inputs.target_date || '' }}"
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
