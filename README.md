@@ -81,14 +81,15 @@ SCRAPE_DELAY_MS=500                       # リクエスト間隔（デフォル
 
 GitHub リポジトリの **Settings → Secrets and variables → Actions** に以下を設定してください。
 
-| Secret 名 | 値 |
-|-----------|---|
-| `SUPABASE_URL` | Supabase プロジェクトの API URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role キー |
-| `GEMINI_API_KEY` | Gemini API キー |
-| `GEMINI_MODEL` | 使用するモデル名（例: `gemini-1.5-flash`） |
-| `GEM_SYSTEM_PROMPT` | AI予想のシステムプロンプト（未設定時は `predictionService.ts` 内のミニマルプロンプトが使用される） |
-| `SCRAPE_DELAY_MS` | リクエスト間隔ミリ秒（例: `500`） |
+| Secret 名 | 必須 | 値 |
+|-----------|------|---|
+| `SUPABASE_URL` | ○ | Supabase プロジェクトの API URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | ○ | Supabase Service Role キー |
+| `GEMINI_API_KEY` | ○ | Gemini API キー |
+| `GEMINI_MODEL` | | 使用するモデル名（例: `gemini-1.5-flash`） |
+| `GEM_SYSTEM_PROMPT` | | AI予想のシステムプロンプト（未設定時は `predictionService.ts` 内のミニマルプロンプトが使用される） |
+| `SCRAPE_DELAY_MS` | | リクエスト間隔ミリ秒（例: `500`） |
+| `NOTIFY_WEBHOOK_URL` | | ワークフロー失敗時の通知用Webhook URL（Slack/Discord等）。設定しない場合通知はスキップされる |
 
 > **注意**: GitHub Secrets は値を確認できない仕様です。更新が必要な場合は上書き設定してください。
 
@@ -243,6 +244,10 @@ docs/migrations/                  # Supabase SQL マイグレーション
 | `ci.yml` | PR / push to main | — | 10分 |
 
 ジョブの同時実行防止は `job_runs` テーブルによるロックと、GitHub Actions の `concurrency` グループの二重構造で行っています。
+
+### 失敗時の通知
+
+`NOTIFY_WEBHOOK_URL` をリポジトリ Secrets に設定すると、ワークフロー失敗時に JSON ペイロードを POST します（Slack Incoming Webhook / Discord Webhook 互換）。未設定の場合は通知スキップされます。
 
 ## AI予想
 
