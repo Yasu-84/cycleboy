@@ -25,7 +25,7 @@ npm run check-env    # 環境変数の確認 (tsx scripts/check-env.ts)
 
 ## 前提条件
 
-- Node.js 18+
+- Node.js 22+
 - [Supabase](https://supabase.com) アカウント（プロジェクト作成済みであること）
 - [Gemini API キー](https://makersuite.google.com/app/apikey)（Google AI Studio で取得）
 - [Vercel](https://vercel.com) アカウント（デプロイ先）
@@ -175,6 +175,8 @@ src/
 │   ├── supabase/
 │   │   └── client.ts             # サーバーサイドSupabaseクライアント
 │   └── utils/
+│       ├── arrayUtils.ts
+│       ├── authUtils.ts
 │       ├── dateUtils.ts
 │       └── gradeUtils.ts
 ├── types/                        # TypeScript型定義
@@ -230,7 +232,7 @@ docs/migrations/                  # Supabase SQL マイグレーション
 
 ## GitHub Actions
 
-4つのワークフローが定義されています。すべて `npx tsx scripts/xxx.ts` で実行します。
+5つのワークフローが定義されています。すべて `npx tsx scripts/xxx.ts` で実行します。
 
 | ワークフロー | スケジュール | 手動実行 | タイムアウト |
 |---|---|---|---|
@@ -238,6 +240,7 @@ docs/migrations/                  # Supabase SQL マイグレーション
 | `result.yml` | 毎日 JST 23:00 | `target_date` | 30分 |
 | `cleanup.yml` | 毎日 JST 05:00 | — | 10分 |
 | `prediction.yml` | — （手動のみ） | `target_date` | 60分 |
+| `ci.yml` | PR / push to main | — | 10分 |
 
 ジョブの同時実行防止は `job_runs` テーブルによるロックと、GitHub Actions の `concurrency` グループの二重構造で行っています。
 

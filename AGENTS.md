@@ -32,7 +32,7 @@ src/
     repositories/    # Supabase data access layer
     services/        # Business logic (scrapeService, predictionService, cleanupService)
     supabase/client  # Server-side Supabase client (SERVICE_ROLE_KEY, bypasses RLS)
-    utils/           # Shared utilities (dateUtils, etc.)
+    utils/           # Shared utilities (dateUtils, arrayUtils, authUtils, gradeUtils)
   types/             # TypeScript type definitions
 scripts/             # Standalone scripts run via tsx (also called from GitHub Actions)
 docs/migrations/     # Supabase SQL migrations
@@ -48,7 +48,7 @@ docs/migrations/     # Supabase SQL migrations
   - `/api/cron/*`: `CRON_SECRET` Bearer token → runs work inline
 - **Job locking**: `scrapeService` uses the `job_runs` table for concurrency control — prevents duplicate scrape runs.
 - **Scripts run via `tsx`**, not compiled output. `tsconfig.scripts.json` exists but is for IDE support only.
-- **GitHub Actions** (3 workflows): `scrape.yml` (daily cron JST 05:15), `cleanup.yml` (daily cron JST 05:00), `prediction.yml` (manual only). All use `npx tsx scripts/xxx.ts`. Note: `scrape.yml` only offers `all|schedule|program|entry` as inputs, but `prediction.yml` calls `scrape.ts prediction` directly.
+- **GitHub Actions** (5 workflows): `scrape.yml` (daily cron JST 05:15), `result.yml` (daily cron JST 23:00), `cleanup.yml` (daily cron JST 05:00), `prediction.yml` (manual only), `ci.yml` (PR/push to main). All use `npx tsx scripts/xxx.ts`. Note: `scrape.yml` offers `all|schedule|program|entry|result` as inputs, and `prediction.yml` calls `scrape.ts prediction` directly.
 - **Required env vars**: See `.env.local.example`. Minimum for dev: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_API_KEY`, `GEMINI_API_KEY`. GitHub Actions additionally need `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_TOKEN`.
 - **Gemini model**: Code defaults to `gemini-2.0-flash-exp` but CI secrets set `gemini-1.5-flash` — this is intentional, not a bug to fix.
 - **Rate limiting**: `SCRAPE_DELAY_MS` env var (default 500ms) controls delay between scrape requests.
