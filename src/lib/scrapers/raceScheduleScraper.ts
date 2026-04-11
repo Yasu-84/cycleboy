@@ -187,9 +187,3 @@ function extractJyoCd(href: string): string | null {
     const m = href.match(/jyo_cd=(\d+)/i);
     return m ? m[1] : null;
 }
-
-/** href から任意のクエリパラメータ値を抽出する */
-function extractJyoCdFromParam(href: string, param: string): string | null {
-    const m = href.match(new RegExp(`[?&]${param}=([^&]+)`, 'i'));
-    return m ? m[1] : null;
-}

@@ -342,7 +342,7 @@ async function callAI(
             }
 
             // 型安全にアクセス
-            const candidates = (data as any)?.candidates;
+            const candidates = (data as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })?.candidates;
             const aiText = candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
             if (!aiText) {

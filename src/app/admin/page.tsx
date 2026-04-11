@@ -288,17 +288,6 @@ export default function AdminPage() {
 // 表示ヘルパー
 // ----------------------------------------------------------------
 
-function formatJobType(t: string): string {
-    const map: Record<string, string> = {
-        cron_scrape: 'スクレイプ',
-        cron_cleanup: 'クリーンアップ',
-        cron_result: '結果取得',
-        admin_scrape: 'スクレイプ(手動)',
-        admin_prediction: 'AI予想(手動)',
-    };
-    return map[t] ?? t;
-}
-
 function formatDate(iso: string): string {
     return new Date(iso).toLocaleString('ja-JP', {
         timeZone: 'Asia/Tokyo',

@@ -13,12 +13,6 @@ function getWakuClass(wakuNo: number): string {
     return `waku-${wakuNo}`;
 }
 
-/** 車番 → 枠番の変換 (car_count に依存するが、ここでは entries から引き当て) */
-function getWakuBySha(entries: RaceEntry[], shaNo: number): number {
-    const entry = entries.find((e) => e.sha_no === shaNo);
-    return entry?.waku_no ?? shaNo;
-}
-
 /** ライン内のポジション名を推定 */
 function getPositionLabel(index: number): string {
     if (index === 0) return '自力';
@@ -44,7 +38,6 @@ export default function FormationTab({ entries, prediction }: FormationTabProps)
                     <div className={styles.lineChips}>
                         {line.sha_nos.map((shaNo, chipIdx) => {
                             const entry = entries.find((e) => e.sha_no === shaNo);
-                            const wakuNo = getWakuBySha(entries, shaNo);
                             return (
                                 <div key={shaNo} className={styles.chipGroup}>
                                     {chipIdx > 0 && <span className={styles.arrow}>→</span>}

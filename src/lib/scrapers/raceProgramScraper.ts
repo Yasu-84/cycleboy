@@ -10,7 +10,6 @@
  *   ※ .MidNight のみ確認済み。.Morning/.Night/.Girls は推測 → aria-label フォールバックあり
  */
 import { parseKaisaiDate } from '@/lib/utils/dateUtils';
-import { parseGradeFromClass } from '@/lib/utils/gradeUtils';
 import { fetchPage, scrapeDelay } from './fetchUtils';
 import type { ProgramInput } from '@/types/program';
 import type { RaceInput } from '@/types/race';
@@ -215,19 +214,4 @@ export async function scrapeKaisaiTypeMap(
 function extractRaceId(href: string): string | null {
     const m = href.match(/race_id=([0-9A-Za-z]+)/i);
     return m ? m[1] : null;
-}
-
-/** "10:30 10:28" 形式から発走・締切時刻を抽出する */
-function parseTimes(timesText: string): {
-    departure_time: string;
-    deadline_time: string;
-} {
-    const parts = timesText.split(/\s+/).filter(Boolean);
-    const toTime = (s: string) =>
-        s && /^\d{1,2}:\d{2}/.test(s) ? `${s}:00`.slice(0, 8) : '00:00:00';
-
-    return {
-        departure_time: toTime(parts[0] ?? ''),
-        deadline_time: toTime(parts[1] ?? parts[0] ?? ''),
-    };
 }

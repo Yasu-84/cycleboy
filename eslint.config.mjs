@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ad-hoc debug scripts (not part of the codebase)
+    "scripts/test_*",
+    "test_db.js",
   ]),
 ]);
 

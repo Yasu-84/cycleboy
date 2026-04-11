@@ -97,13 +97,12 @@ interface SessionParseResult {
 function parseRecentSessions(
     $: CheerioAPI,
     container: ReturnType<CheerioAPI>,
-    playerRow: CheerioElement
+    _playerRow: CheerioElement
 ): SessionParseResult {
-    // 今節: .detail_table_tbodyItem.GroupLeft を起点に同行内のセルから取得
     let current_session: CurrentSession | null = null;
     const currentRaces: Array<{ race_name: string; rank: number | string }> = [];
 
-    let firstTh = container.find('th.detail_table_tbodyInner.GroupLeft').first();
+    const firstTh = container.find('th.detail_table_tbodyInner.GroupLeft').first();
     let currentCells;
 
     if (firstTh.length > 0) {

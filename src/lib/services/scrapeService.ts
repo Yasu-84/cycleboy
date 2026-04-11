@@ -26,7 +26,7 @@ import { scrapeEntry } from '@/lib/scrapers/raceEntryScraper';
 import { scrapeRecentResults } from '@/lib/scrapers/raceRecentResultScraper';
 import { scrapeMatchResults } from '@/lib/scrapers/raceMatchResultScraper';
 import { scrapeResult } from '@/lib/scrapers/raceResultScraper';
-import { fetchPageWithErrorDetails, type FetchError } from '@/lib/scrapers/fetchUtils';
+import { type FetchError } from '@/lib/scrapers/fetchUtils';
 import { run as runPrediction } from '@/lib/services/predictionService';
 import type { JobStep, TriggerSource, JobType } from '@/types/jobRun';
 
