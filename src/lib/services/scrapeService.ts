@@ -28,7 +28,7 @@ import { scrapeMatchResults } from '@/lib/scrapers/raceMatchResultScraper';
 import { scrapeResult } from '@/lib/scrapers/raceResultScraper';
 import { fetchPageWithErrorDetails, type FetchError } from '@/lib/scrapers/fetchUtils';
 import { run as runPrediction } from '@/lib/services/predictionService';
-import type { JobStep, TriggerSource } from '@/types/jobRun';
+import type { JobStep, TriggerSource, JobType } from '@/types/jobRun';
 
 export interface ScrapeOptions {
     step?: JobStep;
@@ -54,10 +54,12 @@ export async function run(options: ScrapeOptions = {}): Promise<ScrapeResult> {
     const targetDate = options.targetDate || getJstToday();
     const triggerSource = options.triggerSource || 'cron';
 
+    const jobType = getJobType(step);
+
     console.log(`[scrapeService] start  step=${step}  target_date=${targetDate}`);
 
     // STEP 0: ジョブロック取得
-    const isAlreadyRunning = await checkAlreadyRunning(step);
+    const isAlreadyRunning = await jobRunRepo.checkAlreadyRunning(jobType);
     if (isAlreadyRunning) {
         console.warn('[scrapeService] another job is running, skipping.');
         return {
@@ -69,7 +71,7 @@ export async function run(options: ScrapeOptions = {}): Promise<ScrapeResult> {
     }
 
     const jobRunId = await jobRunRepo.startJobRun({
-        job_type: step === 'cleanup' ? 'cron_cleanup' : step === 'result' ? 'cron_result' : 'cron_scrape',
+        job_type: jobType,
         step,
         trigger_source: triggerSource,
         trigger_by: options.triggerBy,
@@ -525,20 +527,10 @@ async function runResultStep(
 // ヘルパー
 // ----------------------------------------------------------------
 
-/** 実行中ジョブの存在チェック（job_runs テーブルベースの排他制御） */
-async function checkAlreadyRunning(step: JobStep): Promise<boolean> {
-    const { data, error } = await (await import('@/lib/supabase/client')).supabase
-        .from('job_runs')
-        .select('id')
-        .eq('status', 'running')
-        .eq('job_type', step === 'cleanup' ? 'cron_cleanup' : step === 'result' ? 'cron_result' : 'cron_scrape')
-        .limit(1);
-
-    if (error) {
-        console.error('[scrapeService.checkLock] error:', error.message);
-        return false; // エラー時はロック取得失敗とみなさず処理継続
-    }
-    return (data?.length ?? 0) > 0;
+function getJobType(step: JobStep): JobType {
+    if (step === 'cleanup') return 'cron_cleanup';
+    if (step === 'result') return 'cron_result';
+    return 'cron_scrape';
 }
 
 /** レース一覧を jyo_cd 単位でグループ化 */

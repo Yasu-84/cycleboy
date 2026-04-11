@@ -78,8 +78,8 @@ function parseResults(
                 move_type,
                 sb_flag,
             });
-        } catch {
-            // 該当行をスキップ
+        } catch (err) {
+            console.warn('[raceResultScraper] parseResults row error:', err instanceof Error ? err.message : String(err), `raceId=${raceId}`);
         }
     });
 
@@ -130,8 +130,8 @@ function parseRefunds(
                 payout,
                 popularity,
             });
-        } catch {
-            // 該当行をスキップ
+        } catch (err) {
+            console.warn('[raceResultScraper] parseRefunds row error:', err instanceof Error ? err.message : String(err), `raceId=${raceId}`);
         }
     });
 

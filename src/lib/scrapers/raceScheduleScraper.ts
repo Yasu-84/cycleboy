@@ -55,8 +55,8 @@ export async function scrapeGradeSchedules(
             const jyo_name = venueLink.text().trim();
 
             results.push({ jyo_cd, jyo_name, grade, kaisai_name, start_date, end_date });
-        } catch {
-            // パースエラーは該当行をスキップ
+        } catch (err) {
+            console.warn('[raceScheduleScraper] gradeSchedule row error:', err instanceof Error ? err.message : String(err));
         }
     });
 
@@ -126,8 +126,8 @@ export async function scrapeTodayRaceList(
                 start_date: targetDate,
                 end_date: targetDate,
             });
-        } catch {
-            // スキップ
+        } catch (err) {
+            console.warn('[raceScheduleScraper] todayRaceList row error:', err instanceof Error ? err.message : String(err));
         }
     });
 

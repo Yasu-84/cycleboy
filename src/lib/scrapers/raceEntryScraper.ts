@@ -148,8 +148,8 @@ export async function scrapeEntry(raceId: string): Promise<EntryScrapeResult> {
                 comment,
                 formation_prediction,
             });
-        } catch {
-            // 当該選手行はスキップ
+        } catch (err) {
+            console.warn('[raceEntryScraper] parseEntry row error:', err instanceof Error ? err.message : String(err), `raceId=${raceId}`);
         }
     });
 

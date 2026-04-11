@@ -72,8 +72,8 @@ export async function scrapeRecentResults(raceId: string): Promise<RaceRecentRes
                 recent2,
                 recent3,
             });
-        } catch {
-            // 該当選手行をスキップ
+        } catch (err) {
+            console.warn('[raceRecentResultScraper] parsePlayer row error:', err instanceof Error ? err.message : String(err), `raceId=${raceId}`);
         }
     });
 
@@ -164,8 +164,8 @@ function parseRecentSessions(
             if (kaisai_date && races.length > 0) {
                 recentSessions.push({ kaisai_date, grade, jyo_name, races });
             }
-        } catch {
-            // スキップ
+        } catch (err) {
+            console.warn('[raceRecentResultScraper] parseRecentSessions block error:', err instanceof Error ? err.message : String(err));
         }
     });
 

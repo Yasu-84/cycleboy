@@ -25,6 +25,7 @@ import * as jobRunRepo from '@/lib/repositories/jobRunRepository';
 import type { TriggerSource } from '@/types/jobRun';
 
 const RETAIN_DAYS = 31;
+const CLEANUP_JOB_TYPE = 'cron_cleanup';
 
 export interface CleanupOptions {
     triggerSource?: TriggerSource;
@@ -38,6 +39,13 @@ export interface CleanupResult {
 }
 
 export async function run(options: CleanupOptions = {}): Promise<CleanupResult> {
+    // ジョブロック取得（並行実行防止）
+    const isAlreadyRunning = await jobRunRepo.checkAlreadyRunning(CLEANUP_JOB_TYPE);
+    if (isAlreadyRunning) {
+        console.warn('[cleanupService] another cleanup job is running, skipping.');
+        return { success: true, jobRunId: '', deleted: {} };
+    }
+
     // 閾値 = JST 今日 - 31 日（以前のものを削除）
     const threshold = getJstDateMinusDays(RETAIN_DAYS);
     // TIMESTAMPTZ 比較のために ISO 文字列に変換（当日 00:00:00 JST → UTC に変換）

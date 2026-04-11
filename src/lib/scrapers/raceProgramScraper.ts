@@ -52,8 +52,8 @@ export async function scrapeProgramByJyo(
         const raw = $(el).attr('data-kaisai_date') ?? '';
         try {
             kaisaiDates.push(parseKaisaiDate(raw));
-        } catch {
-            // 不正な形式はスキップ
+        } catch (err) {
+            console.warn('[raceProgramScraper] parseKaisaiDate error:', err instanceof Error ? err.message : String(err), `raw=${raw}`);
         }
     });
 
@@ -129,8 +129,8 @@ export async function scrapeProgramByJyo(
                     departure_time,
                     deadline_time,
                 });
-            } catch {
-                // スキップ
+            } catch (err) {
+                console.warn('[raceProgramScraper] parseRaceBox error:', err instanceof Error ? err.message : String(err));
             }
         });
     }
@@ -199,8 +199,8 @@ export async function scrapeKaisaiTypeMap(
             if (types.length > 0) {
                 map.set(dateStr, types);
             }
-        } catch {
-            // スキップ
+        } catch (err) {
+            console.warn('[raceProgramScraper] calendarDay parse error:', err instanceof Error ? err.message : String(err));
         }
     });
 

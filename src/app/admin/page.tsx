@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import styles from './admin.module.css';
 import type { JobRun } from '@/types/jobRun';
+import { fetchJobRunsAction, triggerWorkflowAction } from './actions';
 
 // ----------------------------------------------------------------
 // 定数
 // ----------------------------------------------------------------
 
 const POLL_INTERVAL_MS = 3_000;
-const ADMIN_API_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY ?? '';
 
 type WorkflowType = 'scrape' | 'cleanup' | 'prediction';
 type StepType = 'all' | 'schedule' | 'program' | 'entry' | 'prediction' | 'result';
@@ -55,13 +55,9 @@ export default function AdminPage() {
 
     const fetchJobRuns = useCallback(async () => {
         try {
-            const res = await fetch('/api/admin/job-runs', {
-                headers: { 'x-admin-api-key': ADMIN_API_KEY },
-            });
-            if (!res.ok) return;
-            const json = (await res.json()) as { runs: JobRun[]; hasRecentFailure: boolean };
-            setJobRuns(json.runs ?? []);
-            setHasFailure(json.hasRecentFailure ?? false);
+            const result = await fetchJobRunsAction();
+            setJobRuns(result.runs ?? []);
+            setHasFailure(result.hasRecentFailure ?? false);
             setLastPolled(new Date());
         } catch {
             // ポーリングエラーは無視（次のタイミングで再試行）
@@ -85,78 +81,17 @@ export default function AdminPage() {
         setStatusMsg(null);
 
         try {
-            const body: Record<string, string | undefined> = { workflow: opts.workflow };
-            if (opts.step) body.step = opts.step;
-            if ((opts.workflow === 'scrape' || opts.workflow === 'prediction') && opts.targetDate) {
-                body.target_date = opts.targetDate;
-            }
-
-            const res = await fetch('/api/admin/trigger', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-api-key': ADMIN_API_KEY,
-                },
-                body: JSON.stringify(body),
+            const result = await triggerWorkflowAction({
+                workflow: opts.workflow,
+                step: opts.step,
+                targetDate: opts.targetDate,
             });
 
-            if (res.ok) {
-                setStatusMsg({
-                    type: 'ok',
-                    text: 'GitHub Actions に起動リクエストを送信しました。数秒後にジョブ履歴に反映されます。',
-                });
-                // 5秒後に履歴を再取得
+            if (result.ok) {
+                setStatusMsg({ type: 'ok', text: result.message });
                 setTimeout(() => void fetchJobRuns(), 5_000);
             } else {
-                const json = (await res.json()) as { error?: string };
-                setStatusMsg({ type: 'err', text: json.error ?? `HTTP ${res.status}` });
-            }
-        } catch (err) {
-            setStatusMsg({ type: 'err', text: err instanceof Error ? err.message : String(err) });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // ----------------------------------------------------------------
-    // AI予想実行
-    // ----------------------------------------------------------------
-
-    const triggerPrediction = async () => {
-        setLoading(true);
-        setStatusMsg(null);
-
-        try {
-            const body: Record<string, string | undefined> = {};
-            if (targetDate) body.target_date = targetDate;
-
-            const res = await fetch('/api/admin/prediction', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-api-key': ADMIN_API_KEY,
-                },
-                body: JSON.stringify(body),
-            });
-
-            if (res.ok) {
-                const json = await res.json() as { message?: string; summary?: string; errors?: string[] };
-                let message = 'AI予想を実行しました。';
-                if (json.summary) {
-                    message += ` ${json.summary}`;
-                }
-                if (json.errors && json.errors.length > 0) {
-                    message += ` エラー: ${json.errors.join(', ')}`;
-                }
-                setStatusMsg({
-                    type: 'ok',
-                    text: message,
-                });
-                // 5秒後に履歴を再取得
-                setTimeout(() => void fetchJobRuns(), 5_000);
-            } else {
-                const json = (await res.json()) as { error?: string };
-                setStatusMsg({ type: 'err', text: json.error ?? `HTTP ${res.status}` });
+                setStatusMsg({ type: 'err', text: result.error });
             }
         } catch (err) {
             setStatusMsg({ type: 'err', text: err instanceof Error ? err.message : String(err) });

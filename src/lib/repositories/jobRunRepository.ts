@@ -108,3 +108,58 @@ export async function hasRecentFailure(withinHours = 24): Promise<boolean> {
     if (error) throw new Error(`[jobRunRepository.hasRecentFailure] ${error.message}`);
     return (count ?? 0) > 0;
 }
+
+const STALE_THRESHOLD_MINUTES = 30;
+
+/**
+ * 指定分数以上 running のままのジョブを failed に更新する。
+ * プロセスクラッシュ等で finishJobRun が呼ばれなかった場合の救済。
+ */
+export async function releaseStaleLocks(
+    staleMinutes: number = STALE_THRESHOLD_MINUTES
+): Promise<number> {
+    const threshold = new Date(Date.now() - staleMinutes * 60 * 1000).toISOString();
+
+    const { data, error } = await supabase
+        .from(RUNS_TABLE)
+        .update({
+            status: 'failed',
+            finished_at: new Date().toISOString(),
+            summary: { staleCleanup: true, staleMinutes },
+        })
+        .eq('status', 'running')
+        .lt('started_at', threshold)
+        .select('id');
+
+    if (error) {
+        console.error(`[jobRunRepository.releaseStaleLocks] ${error.message}`);
+        return 0;
+    }
+
+    const count = data?.length ?? 0;
+    if (count > 0) {
+        console.log(`[jobRunRepository.releaseStaleLocks] released ${count} stale job(s)`);
+    }
+    return count;
+}
+
+/**
+ * 指定 job_type で現在 running 中のジョブがあるか確認する。
+ * 古い running レコード（30分超）は自動で failed に更新する。
+ */
+export async function checkAlreadyRunning(jobType: JobType): Promise<boolean> {
+    await releaseStaleLocks();
+
+    const { data, error } = await supabase
+        .from(RUNS_TABLE)
+        .select('id')
+        .eq('status', 'running')
+        .eq('job_type', jobType)
+        .limit(1);
+
+    if (error) {
+        console.error(`[jobRunRepository.checkAlreadyRunning] ${error.message}`);
+        return false;
+    }
+    return (data?.length ?? 0) > 0;
+}

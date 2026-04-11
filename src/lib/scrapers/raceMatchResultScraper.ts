@@ -69,8 +69,8 @@ export async function scrapeMatchResults(raceId: string): Promise<RaceMatchResul
                 total,
                 vs_records,
             });
-        } catch {
-            // 該当選手行をスキップ
+        } catch (err) {
+            console.warn('[raceMatchResultScraper] parseRow error:', err instanceof Error ? err.message : String(err), `raceId=${raceId}`);
         }
     });
 
