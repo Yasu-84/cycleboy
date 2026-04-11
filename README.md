@@ -26,10 +26,27 @@ npm run check-env    # 環境変数の確認 (tsx scripts/check-env.ts)
 ## 前提条件
 
 - Node.js 18+
-- Supabase アカウント
-- Gemini API キー
+- [Supabase](https://supabase.com) アカウント（プロジェクト作成済みであること）
+- [Gemini API キー](https://makersuite.google.com/app/apikey)（Google AI Studio で取得）
+- [Vercel](https://vercel.com) アカウント（デプロイ先）
 
-## 環境変数の設定
+## セットアップ
+
+### 1. Supabase プロジェクトの作成（外部操作）
+
+Supabase ダッシュボードで新しいプロジェクトを作成し、SQL エディタで以下のマイグレーションファイルを順番に実行してください。
+
+1. **`docs/migrations/001_create_tables.sql`** — 全テーブル・インデックス作成
+2. **`docs/migrations/002_setup_rls.sql`** — RLS ポリシー設定
+
+```bash
+# Supabase CLI を使用する場合
+supabase db push
+```
+
+アプリケーションは `SUPABASE_SERVICE_ROLE_KEY` でアクセスするため、RLS を有効化しても Service Role は全テーブルにアクセス可能です。
+
+### 2. 環境変数の設定
 
 `.env.local.example` をコピーして `.env.local` を作成し、値を設定してください。
 
@@ -60,19 +77,46 @@ CRON_SECRET=your-cron-secret
 SCRAPE_DELAY_MS=500                       # リクエスト間隔（デフォルト: 500ms）
 ```
 
-## データベースのセットアップ
+### 3. GitHub リポジトリ Secrets の設定（外部操作）
 
-Supabase の SQL エディタで以下のマイグレーションファイルを順番に実行してください。
+GitHub リポジトリの **Settings → Secrets and variables → Actions** に以下を設定してください。
 
-1. **`docs/migrations/001_create_tables.sql`** — 全テーブル・インデックス作成
-2. **`docs/migrations/002_setup_rls.sql`** — RLS ポリシー設定
+| Secret 名 | 値 |
+|-----------|---|
+| `SUPABASE_URL` | Supabase プロジェクトの API URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role キー |
+| `GEMINI_API_KEY` | Gemini API キー |
+| `GEMINI_MODEL` | 使用するモデル名（例: `gemini-1.5-flash`） |
+| `GEM_SYSTEM_PROMPT` | AI予想のシステムプロンプト（未設定時は `predictionService.ts` 内のミニマルプロンプトが使用される） |
+| `SCRAPE_DELAY_MS` | リクエスト間隔ミリ秒（例: `500`） |
+
+> **注意**: GitHub Secrets は値を確認できない仕様です。更新が必要な場合は上書き設定してください。
+
+### 4. Vercel へのデプロイ（外部操作）
 
 ```bash
-# Supabase CLI を使用する場合
-supabase db push
+vercel --prod
 ```
 
-アプリケーションは `SUPABASE_SERVICE_ROLE_KEY` でアクセスするため、RLS を有効化しても Service Role は全テーブルにアクセス可能です。
+デプロイ後、Vercel ダッシュボードの **Settings → Environment Variables** に本番用の環境変数を設定してください。
+
+| 環境変数 | 備考 |
+|----------|------|
+| `SUPABASE_URL` | |
+| `SUPABASE_SERVICE_ROLE_KEY` | |
+| `ADMIN_API_KEY` | |
+| `GEMINI_API_KEY` | |
+| `GEMINI_MODEL` | |
+| `CRON_SECRET` | `/api/cron/*` の認証用（設定しない場合 cron エンドポイントは機能しない） |
+
+> **注意**: 現在 `vercel.json` に Cron スケジュールの定義がありません。定期実行は GitHub Actions で行っています。Vercel Cron を使用する場合は `vercel.json` に `crons` 設定を追加し、`CRON_SECRET` を設定してください。
+
+### 5. GitHub Personal Access Token の作成（外部操作）
+
+管理画面から GitHub Actions を起動するには、`.env.local` に `GITHUB_TOKEN` が必要です。
+
+- **種別**: Fine-grained Personal Access Token 推奨
+- **スコープ**: `Contents`（読み取り）+ `Actions`（書き込み・workflow_dispatch）
 
 ## プロジェクト構造
 
@@ -215,7 +259,14 @@ docs/migrations/                  # Supabase SQL マイグレーション
 
 ### プロンプトのカスタマイズ
 
-`GEM_SYSTEM_PROMPT` 環境変数を設定することで、AI予想のシステムプロンプトをカスタマイズできます。未設定の場合はデフォルトのプロンプトが使用されます。
+AI予想のシステムプロンプトは `GEM_SYSTEM_PROMPT` 環境変数で制御しています。
+
+| 実行環境 | 設定場所 | 内容 |
+|----------|----------|------|
+| 本番（GitHub Actions） | リポジトリ Secrets の `GEM_SYSTEM_PROMPT` | 7セクション形式の出力を指示するカスタムプロンプト |
+| ローカル開発（`.env.local`） | 未設定 | `predictionService.ts` 内のミニマルプロンプトがフォールバック |
+
+> **注意**: ローカル開発で本番と同等の予想結果を得るには、`.env.local` に `GEM_SYSTEM_PROMPT` を設定してください。本番用のプロンプト内容は GitHub Secrets で管理されているため、リポジトリコード上には含まれていません。
 
 ## ヘルスチェック
 
