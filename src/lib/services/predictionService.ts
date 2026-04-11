@@ -449,6 +449,17 @@ function parseAIResponse(aiResponse: string, raceId: string): RacePredictionInpu
 /**
  * AIのレスポンスからセクションを抽出する
  */
+function cleanSectionContent(raw: string): string {
+    return raw
+        .split('\n')
+        .filter(line => {
+            const trimmed = line.trim();
+            return trimmed !== '---' && trimmed !== '###' && trimmed !== '--- ###';
+        })
+        .join('\n')
+        .trim();
+}
+
 function parseSections(aiResponse: string): Record<string, string> {
     const sections: Record<string, string> = {
         section1: '',
@@ -461,45 +472,45 @@ function parseSections(aiResponse: string): Record<string, string> {
     };
 
     // セクション1: 自信度
-    const section1Match = aiResponse.match(/セクション1.*?自信度[\s\S]*?(?=セクション2|$)/i);
+    const section1Match = aiResponse.match(/セクション1.*?\n([\s\S]*?)(?=セクション2|$)/i);
     if (section1Match) {
-        sections.section1 = section1Match[0].trim();
+        sections.section1 = cleanSectionContent(section1Match[1]);
     }
 
     // セクション2: 展開予想
-    const section2Match = aiResponse.match(/セクション2.*?展開予想[\s\S]*?(?=セクション3|$)/i);
+    const section2Match = aiResponse.match(/セクション2.*?\n([\s\S]*?)(?=セクション3|$)/i);
     if (section2Match) {
-        sections.section2 = section2Match[0].trim();
+        sections.section2 = cleanSectionContent(section2Match[1]);
     }
 
     // セクション3: ライン別評価
-    const section3Match = aiResponse.match(/セクション3.*?ライン別評価[\s\S]*?(?=セクション4|$)/i);
+    const section3Match = aiResponse.match(/セクション3.*?\n([\s\S]*?)(?=セクション4|$)/i);
     if (section3Match) {
-        sections.section3 = section3Match[0].trim();
+        sections.section3 = cleanSectionContent(section3Match[1]);
     }
 
     // セクション4: 本命シナリオ
-    const section4Match = aiResponse.match(/セクション4[:：].*?本命シナリオ[\s\S]*?(?=セクション5|$)/i);
+    const section4Match = aiResponse.match(/セクション4[:：].*?\n([\s\S]*?)(?=セクション5|$)/i);
     if (section4Match) {
-        sections.section4 = section4Match[0].trim();
+        sections.section4 = cleanSectionContent(section4Match[1]);
     }
 
     // セクション5: 中穴シナリオ
-    const section5Match = aiResponse.match(/セクション5[:：].*?中穴シナリオ[\s\S]*?(?=セクション6|$)/i);
+    const section5Match = aiResponse.match(/セクション5[:：].*?\n([\s\S]*?)(?=セクション6|$)/i);
     if (section5Match) {
-        sections.section5 = section5Match[0].trim();
+        sections.section5 = cleanSectionContent(section5Match[1]);
     }
 
     // セクション6: 推奨買い目
-    const section6Match = aiResponse.match(/セクション6.*?推奨買い目[\s\S]*?(?=セクション7|$)/i);
+    const section6Match = aiResponse.match(/セクション6.*?\n([\s\S]*?)(?=セクション7|$)/i);
     if (section6Match) {
-        sections.section6 = section6Match[0].trim();
+        sections.section6 = cleanSectionContent(section6Match[1]);
     }
 
     // セクション7: 狙い目の一言
-    const section7Match = aiResponse.match(/セクション7[:：].*?狙い目の一言[\s\S]*?$/i);
+    const section7Match = aiResponse.match(/セクション7[:：].*?\n([\s\S]*?)$/i);
     if (section7Match) {
-        sections.section7 = section7Match[0].trim();
+        sections.section7 = cleanSectionContent(section7Match[1]);
     }
 
     return sections;
