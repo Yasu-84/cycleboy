@@ -2,6 +2,7 @@
 
 import type { RaceEntry } from '@/types/raceEntry';
 import type { RacePrediction } from '@/types/racePrediction';
+import { determineLineName } from '@/lib/utils/lineUtils';
 import styles from './entry.module.css';
 
 interface FormationTabProps {
@@ -32,10 +33,16 @@ export default function FormationTab({ entries, prediction }: FormationTabProps)
         <div className={styles.formationWrapper}>
             <h3 className={styles.formationTitle}>← 並び予想</h3>
 
-            {formation.lines.map((line, lineIdx) => (
-                <div key={lineIdx} className={styles.lineCard}>
-                    <div className={styles.lineLabel}>ライン {lineIdx + 1}</div>
-                    <div className={styles.lineChips}>
+            {formation.lines.map((line, lineIdx) => {
+                const linePrefectures = line.sha_nos
+                    .map((shaNo) => entries.find((e) => e.sha_no === shaNo)?.prefecture)
+                    .filter((pref): pref is string => Boolean(pref));
+                const lineName = determineLineName(linePrefectures);
+
+                return (
+                    <div key={lineIdx} className={styles.lineCard}>
+                        <div className={styles.lineLabel}>{lineName}</div>
+                        <div className={styles.lineChips}>
                         {line.sha_nos.map((shaNo, chipIdx) => {
                             const entry = entries.find((e) => e.sha_no === shaNo);
                             return (
@@ -57,7 +64,8 @@ export default function FormationTab({ entries, prediction }: FormationTabProps)
                         })}
                     </div>
                 </div>
-            ))}
+                );
+            })}
 
             {/* セクション3（ライン別評価）の表示エリア */}
             {prediction && prediction.section3_line_evaluation && (
